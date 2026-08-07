@@ -26,7 +26,32 @@
 apt-get update && apt-get install -y \
     docker.io docker-compose-v2 golang nodejs npm git jq apache2-utils openssl
 
-git clone https://github.com/mohammadlohrasbi/6g-network.git /root/6g-network
+git clone https://github.com/mohammadlohrasbi/6g-network.git /root/6g-network-raft
+```
+
+### مسیر نصب
+
+همهٔ اسکریپت‌ها `/root/6g-network-raft` را پیش‌فرض می‌گیرند. اگر جای دیگری
+کار می‌کنید، با متغیر محیطی بازنویسی کنید:
+
+```bash
+ROOT_DIR=/root/6g-network ./bootstrap-secure.sh
+```
+
+**اگر شبکه‌ای از قبل در مسیر دیگری دارید**، مخزن را کپی کنید نه فقط بستهٔ
+تحویلی — بستهٔ من فایل‌های پایه مثل `deploy-staged.sh` را ندارد:
+
+```bash
+cp -r /root/6g-network /root/6g-network-raft
+rm -rf /root/6g-network-raft/test-tools/bench-runs
+cd /path/to/6g-network-complete && ./install.sh /root/6g-network-raft
+```
+
+⚠ دو شبکه هم‌زمان بالا نمی‌آیند — پورت‌ها و نام کانتینرها یکی است. پیش از
+راه‌اندازی این یکی، دیگری را پایین بیاورید:
+
+```bash
+cd /root/6g-network/config && docker compose down
 ```
 
 **همیشه `docker compose` بدون خط تیره.** نسخهٔ v1 با داکر جدید در بازسازی
@@ -49,8 +74,8 @@ git clone https://github.com/mohammadlohrasbi/6g-network.git /root/6g-network
 
 ```bash
 cd /path/to/6g-network-complete
-DRY_RUN=1 ./install.sh /root/6g-network
-./install.sh /root/6g-network
+DRY_RUN=1 ./install.sh /root/6g-network-raft
+./install.sh /root/6g-network-raft
 ```
 
 نصب‌کننده فقط کپی می‌کند و از هر فایل جایگزین‌شده پشتیبان می‌گیرد. هیچ
@@ -63,7 +88,7 @@ DRY_RUN=1 ./install.sh /root/6g-network
 ### گزینهٔ خودکار
 
 ```bash
-cd /root/6g-network/scripts
+cd /root/6g-network-raft/scripts
 DRY_RUN=1 ./bootstrap-secure.sh
 NODES=3 CHANNELS="datachannel" ./bootstrap-secure.sh
 ```
@@ -76,7 +101,7 @@ NODES=3 CHANNELS="datachannel" ./bootstrap-secure.sh
 ### A1 — مواد رمزنگاری و شبکهٔ پایه
 
 ```bash
-cd /root/6g-network/scripts
+cd /root/6g-network-raft/scripts
 NETWORK_TLS=true ORDERER_NODES=3 ./network.sh
 ```
 
@@ -125,7 +150,7 @@ ls config/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.exam
 می‌نشینند و `deploy_functions.sh` همان‌جا را می‌گردد.
 
 ```bash
-cd /root/6g-network/scripts
+cd /root/6g-network-raft/scripts
 for f in generateChaincodes_part*.sh; do bash "$f"; done
 ```
 
@@ -154,7 +179,7 @@ node check-go.js generateChaincodes_spatial.sh         # ✅
 ### A6 — بالا آوردن شبکه
 
 ```bash
-cd /root/6g-network/config
+cd /root/6g-network-raft/config
 docker compose --profile raft up -d
 docker compose -f docker-compose-root-ca.yml up -d
 ```
@@ -256,9 +281,9 @@ systemctl restart dashboard
 ## مسیر B — به‌روزرسانی شبکهٔ موجود
 
 ```bash
-cd /path/to/6g-network-complete && ./install.sh /root/6g-network
+cd /path/to/6g-network-complete && ./install.sh /root/6g-network-raft
 
-cd /root/6g-network/scripts
+cd /root/6g-network-raft/scripts
 bash generateChaincodes_spatial.sh     # تا build OK
 ./upgrade-spatial.sh datachannel       # sequence را از شبکه می‌خواند
 ./seed-network.sh datachannel
@@ -279,7 +304,7 @@ systemctl restart dashboard
 اگر `network.sh` قبلاً گواهی ساخته:
 
 ```bash
-cd /root/6g-network/scripts
+cd /root/6g-network-raft/scripts
 ./set-tls.sh on
 cd ../config && docker compose down && docker compose up -d
 cd ../scripts && node gen-caliper-network.js && ./fix-tape-policy.sh
@@ -477,7 +502,7 @@ cd ../scripts && ./deploy-staged.sh channel datachannel && ./seed-network.sh dat
 **پس از هر reboot:**
 
 ```bash
-cd /root/6g-network/config
+cd /root/6g-network-raft/config
 docker compose --profile raft up -d
 docker compose -f docker-compose-root-ca.yml up -d
 systemctl start dashboard
@@ -492,8 +517,8 @@ systemctl start dashboard
 **پیش از هر تغییر بزرگ:**
 
 ```bash
-cp -r /root/6g-network/test-tools/bench-runs ~/bench-backup-$(date +%F)
-cd /root/6g-network && git add -A && git commit -m "working state"
+cp -r /root/6g-network-raft/test-tools/bench-runs ~/bench-backup-$(date +%F)
+cd /root/6g-network-raft && git add -A && git commit -m "working state"
 ```
 
 ---
