@@ -9,7 +9,8 @@
 # پشتیبان می‌گیرد، پچ می‌کند، syntax چک می‌کند و در صورت خطا برمی‌گرداند.
 set -e
 
-INDEX="/root/6g-network/server/index.js"
+ROOT_DIR="${ROOT_DIR:-/root/6g-network-raft}"
+INDEX="$ROOT_DIR/server/index.js"
 [ ! -f "$INDEX" ] && { echo "یافت نشد: $INDEX"; exit 1; }
 
 BK="${INDEX}.bak_$(date +%Y%m%d_%H%M%S)"
@@ -18,7 +19,7 @@ echo "پشتیبان: $BK"
 
 node << 'NODE_EOF'
 const fs = require('fs');
-const p = '/root/6g-network/server/index.js';
+const p = '/root/6g-network-raft/server/index.js';
 let s = fs.readFileSync(p, 'utf8');
 let changed = 0;
 
