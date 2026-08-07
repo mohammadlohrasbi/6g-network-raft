@@ -30,7 +30,8 @@
 # ══════════════════════════════════════════════════════════════════════
 set -e
 
-TAPE_DIR="${TAPE_CONFIG_DIR:-/root/6g-network/test-tools/tape-configs}"
+ROOT_DIR="${ROOT_DIR:-/root/6g-network-raft}"
+TAPE_DIR="${TAPE_CONFIG_DIR:-$ROOT_DIR/test-tools/tape-configs}"
 MODE="${1:-any}"
 
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
@@ -116,11 +117,11 @@ fi
 # ── ۴) هم‌ترازی سرور ──
 # روتر /api/bench فایل سیاست را خودش می‌سازد و انتخاب می‌کند، ولی مسیر
 # قدیمیِ /api/test/execute نام فایل را در index.js ثابت دارد.
-INDEX="/root/6g-network/server/index.js"
+INDEX="$ROOT_DIR/server/index.js"
 if [ -f "$INDEX" ] && grep -q "majority.rego" "$INDEX"; then
     echo ""
     echo -e "${YELLOW}⚠${NC} server/index.js هنوز به majority.rego اشاره می‌کند."
-    echo -e "  اجرا کنید: ${GREEN}bash /root/6g-network/server/patch-index.sh${NC}"
+    echo -e "  اجرا کنید: ${GREEN}bash $ROOT_DIR/server/patch-index.sh${NC}"
     echo -e "  (نسخهٔ ۵ آن را به endorsement-any.rego تغییر می‌دهد)"
 fi
 
@@ -128,5 +129,5 @@ echo ""
 echo "نمونه (datachannel):"
 grep -E "^policyFile:|^channel:|^chaincode:" "${TAPE_DIR}/config-datachannel.yaml" 2>/dev/null || true
 echo ""
-echo "اجرای تست:  /root/6g-network/test-tools/run-tape.sh datachannel"
+echo "اجرای تست:  $ROOT_DIR/test-tools/run-tape.sh datachannel"
 echo "یا از رابط وب: صفحهٔ Benchmark ← تب Tape (سیاست از همان‌جا انتخاب می‌شود)"
