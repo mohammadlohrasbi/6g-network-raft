@@ -16,7 +16,7 @@
 # ══════════════════════════════════════════════════════════════
 set -e
 
-ROOT_DIR="/root/6g-network"
+ROOT_DIR="${ROOT_DIR:-/root/6g-network-raft}"
 SERVER_DIR="${ROOT_DIR}/server"
 INDEX_FILE="${SERVER_DIR}/index.js"
 TEST_DIR="${ROOT_DIR}/test-tools"
