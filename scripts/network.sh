@@ -5,10 +5,10 @@ if docker compose version >/dev/null 2>&1; then
 else
   COMPOSE="docker-compose"
 fi
-# /root/6g-network/scripts/network.sh
+# /root/6g-network-raft/scripts/network.sh
 # نسخه نهایی — TLS غیرفعال برای سازگاری با Go TLS stack
 
-ROOT_DIR="/root/6g-network"
+ROOT_DIR="${ROOT_DIR:-/root/6g-network-raft}"
 CONFIG_DIR="$ROOT_DIR/config"
 CRYPTO_DIR="$CONFIG_DIR/crypto-config"
 CHANNEL_DIR="$CONFIG_DIR/channel-artifacts"
