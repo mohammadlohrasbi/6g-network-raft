@@ -17,7 +17,7 @@
 # ══════════════════════════════════════════════════════════════════════
 set -uo pipefail
 
-ROOT_DIR="${ROOT_DIR:-/root/6g-network}"
+ROOT_DIR="${ROOT_DIR:-/root/6g-network-raft}"
 CONFIG="$ROOT_DIR/config"
 SCRIPTS="$ROOT_DIR/scripts"
 MODE="${1:-on}"
