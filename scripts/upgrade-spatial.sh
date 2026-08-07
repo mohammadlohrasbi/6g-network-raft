@@ -18,7 +18,7 @@
 # ══════════════════════════════════════════════════════════════════════
 set -e
 
-ROOT_DIR="${ROOT_DIR:-/root/6g-network}"
+ROOT_DIR="${ROOT_DIR:-/root/6g-network-raft}"
 CC_VERSION="${CC_VERSION:-v2}"
 DRY_RUN="${DRY_RUN:-0}"
 ONLY_CHANNEL="${1:-}"
