@@ -41,7 +41,7 @@
 # ══════════════════════════════════════════════════════════════════════
 set -uo pipefail
 
-ROOT_DIR="${ROOT_DIR:-/root/6g-network}"
+ROOT_DIR="${ROOT_DIR:-/root/6g-network-raft}"
 CONFIG_DIR="$ROOT_DIR/config"
 CRYPTO="${CRYPTO_BASE:-$ROOT_DIR/crypto-config}"
 OORG="$CRYPTO/ordererOrganizations/example.com"
@@ -146,18 +146,21 @@ SOLO
     for i in $(seq 2 "$NODES"); do
         echo "    - orderer${i}.example.com:$((7050 + (i-1)*1000)):"
     done | sed 's/:$//'
+    # مسیرها نسبی‌اند، دقیقاً مثل MSPDir در همین فایل. configtxgen روی
+    # هاست اجرا می‌شود و نه داخل کانتینر، پس مسیر داخل‌کانتینری /crypto
+    # برایش وجود ندارد و بلوک پیدایش ساخته نمی‌شود.
     echo "  EtcdRaft:"
     echo "    Consenters:"
     # نود اول
     echo "      - Host: orderer.example.com"
     echo "        Port: 7053"
-    echo "        ClientTLSCert: /crypto/ordererOrganizations/example.com/orderers/orderer.example.com/tls/client.crt"
-    echo "        ServerTLSCert: /crypto/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt"
+    echo "        ClientTLSCert: ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/client.crt"
+    echo "        ServerTLSCert: ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt"
     for i in $(seq 2 "$NODES"); do
         echo "      - Host: orderer${i}.example.com"
         echo "        Port: 7053"
-        echo "        ClientTLSCert: /crypto/ordererOrganizations/example.com/orderers/orderer${i}.example.com/tls/client.crt"
-        echo "        ServerTLSCert: /crypto/ordererOrganizations/example.com/orderers/orderer${i}.example.com/tls/server.crt"
+        echo "        ClientTLSCert: ./crypto-config/ordererOrganizations/example.com/orderers/orderer${i}.example.com/tls/client.crt"
+        echo "        ServerTLSCert: ./crypto-config/ordererOrganizations/example.com/orderers/orderer${i}.example.com/tls/server.crt"
     done
     cat <<'RAFTOPTS'
     Options:
@@ -328,7 +331,7 @@ cat <<'NEXT'
 ⚠ تغییر نوع سرویس ترتیب‌دهی، بلوک پیدایش را عوض می‌کند — پس شبکه باید از
   نو ساخته شود. ترتیب کامل:
 
-    cd /root/6g-network/config
+    cd /root/6g-network-raft/config
     docker compose down              # بدون -v اگر می‌خواهید دفتر بماند
     docker volume ls | grep orderer  # اگر Raft جدید است، volume های
                                      # orderer باید پاک شوند
