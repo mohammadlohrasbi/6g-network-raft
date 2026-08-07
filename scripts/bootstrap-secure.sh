@@ -30,7 +30,7 @@
 # ══════════════════════════════════════════════════════════════════════
 set -uo pipefail
 
-ROOT_DIR="${ROOT_DIR:-/root/6g-network}"
+ROOT_DIR="${ROOT_DIR:-/root/6g-network-raft}"
 SCRIPTS="$ROOT_DIR/scripts"
 CONFIG="$ROOT_DIR/config"
 NODES="${NODES:-3}"
