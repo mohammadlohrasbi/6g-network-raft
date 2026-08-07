@@ -9,13 +9,13 @@
 # از هر فایلی که جایگزین می‌شود پشتیبان گرفته می‌شود.
 #
 # استفاده:
-#   ./install.sh                    # به /root/6g-network
+#   ./install.sh                    # به /root/6g-network-raft
 #   ./install.sh /path/to/repo      # جای دیگر
 #   DRY_RUN=1 ./install.sh          # فقط نشان بده چه می‌کند
 # ══════════════════════════════════════════════════════════════════════
 set -uo pipefail
 
-TARGET="${1:-/root/6g-network}"
+TARGET="${1:-/root/6g-network-raft}"
 DRY_RUN="${DRY_RUN:-0}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$(date +%Y%m%d-%H%M%S)"
@@ -37,7 +37,7 @@ if [ ! -d "$TARGET" ]; then
   bad "پوشه $TARGET وجود ندارد."
   echo ""
   echo "  اگر هنوز مخزن را کلون نکرده‌اید:"
-  echo "    git clone https://github.com/mohammadlohrasbi/6g-network.git $TARGET"
+  echo "    git clone https://github.com/mohammadlohrasbi/6g-network-raft.git $TARGET"
   exit 1
 fi
 for d in scripts server public; do
