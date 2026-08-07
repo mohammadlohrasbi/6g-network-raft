@@ -1,0 +1,549 @@
+[
+ {
+  "contract": "LocationBasedAntennaConfig",
+  "channels": [
+   "managementchannel"
+  ],
+  "fn": "SetAntennaConfig",
+  "params": [
+   "antennaID",
+   "config",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "AntennaConfig"
+ },
+ {
+  "contract": "LocationBasedAssignment",
+  "channels": [
+   "datachannel"
+  ],
+  "fn": "AssignAntenna",
+  "params": [
+   "entityID",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": true,
+  "record": "Assignment"
+ },
+ {
+  "contract": "LocationBasedBandwidth",
+  "channels": [
+   "datachannel"
+  ],
+  "fn": "AssignBandwidth",
+  "params": [
+   "entityID",
+   "bandwidth",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": true,
+  "record": "Bandwidth"
+ },
+ {
+  "contract": "LocationBasedChannelAllocation",
+  "channels": [
+   "managementchannel"
+  ],
+  "fn": "AllocateChannel",
+  "params": [
+   "entityID",
+   "channelID",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "ChannelAllocation"
+ },
+ {
+  "contract": "LocationBasedCongestion",
+  "channels": [
+   "trafficchannel"
+  ],
+  "fn": "RecordCongestion",
+  "params": [
+   "entityID",
+   "congestion",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "Congestion"
+ },
+ {
+  "contract": "LocationBasedConnection",
+  "channels": [
+   "connectivitychannel"
+  ],
+  "fn": "ConnectEntity",
+  "params": [
+   "entityID",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": true,
+  "record": "Connection"
+ },
+ {
+  "contract": "LocationBasedCoverage",
+  "channels": [
+   "analyticschannel"
+  ],
+  "fn": "RecordCoverage",
+  "params": [
+   "entityID",
+   "coverage",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "CoverageRecord"
+ },
+ {
+  "contract": "LocationBasedDynamicRouting",
+  "channels": [
+   "optimizationchannel"
+  ],
+  "fn": "SetDynamicRoute",
+  "params": [
+   "entityID",
+   "route",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "DynamicRouting"
+ },
+ {
+  "contract": "LocationBasedEnergy",
+  "channels": [
+   "analyticschannel"
+  ],
+  "fn": "RecordEnergy",
+  "params": [
+   "entityID",
+   "energy",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "EnergyRecord"
+ },
+ {
+  "contract": "LocationBasedFault",
+  "channels": [
+   "faultchannel"
+  ],
+  "fn": "ReportFault",
+  "params": [
+   "entityID",
+   "faultType",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "Fault"
+ },
+ {
+  "contract": "LocationBasedInterference",
+  "channels": [
+   "integrationchannel"
+  ],
+  "fn": "RecordInterference",
+  "params": [
+   "entityID",
+   "interferenceLevel",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "InterferenceRecord"
+ },
+ {
+  "contract": "LocationBasedIoTAuthentication",
+  "channels": [
+   "authchannel"
+  ],
+  "fn": "AuthenticateIoT",
+  "params": [
+   "deviceID",
+   "token",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "IoTAuthentication"
+ },
+ {
+  "contract": "LocationBasedIoTBandwidth",
+  "channels": [
+   "iotchannel"
+  ],
+  "fn": "AllocateIoTBandwidth",
+  "params": [
+   "deviceID",
+   "bandwidth",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": true,
+  "record": "IoTBandwidth"
+ },
+ {
+  "contract": "LocationBasedIoTConnection",
+  "channels": [
+   "iotchannel"
+  ],
+  "fn": "ConnectIoT",
+  "params": [
+   "deviceID",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": true,
+  "record": "IoTConnection"
+ },
+ {
+  "contract": "LocationBasedIoTFault",
+  "channels": [
+   "iotchannel",
+   "faultchannel"
+  ],
+  "fn": "ReportIoTFault",
+  "params": [
+   "deviceID",
+   "faultType",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "IoTFault"
+ },
+ {
+  "contract": "LocationBasedIoTRegistration",
+  "channels": [
+   "accesschannel"
+  ],
+  "fn": "RegisterIoT",
+  "params": [
+   "deviceID",
+   "status",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "IoTRegistration"
+ },
+ {
+  "contract": "LocationBasedIoTResource",
+  "channels": [
+   "resourcechannel"
+  ],
+  "fn": "AllocateIoTResource",
+  "params": [
+   "deviceID",
+   "resourceID",
+   "amount",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "IoTResource"
+ },
+ {
+  "contract": "LocationBasedIoTRevocation",
+  "channels": [
+   "accesschannel"
+  ],
+  "fn": "RevokeIoT",
+  "params": [
+   "deviceID",
+   "status",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "IoTRevocation"
+ },
+ {
+  "contract": "LocationBasedIoTSession",
+  "channels": [
+   "iotchannel",
+   "sessionchannel"
+  ],
+  "fn": "StartIoTSession",
+  "params": [
+   "deviceID",
+   "sessionID",
+   "status",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "IoTSession"
+ },
+ {
+  "contract": "LocationBasedIoTStatus",
+  "channels": [
+   "iotchannel"
+  ],
+  "fn": "UpdateIoTStatus",
+  "params": [
+   "deviceID",
+   "status",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "IoTStatus"
+ },
+ {
+  "contract": "LocationBasedLatency",
+  "channels": [
+   "performancechannel"
+  ],
+  "fn": "RecordLatency",
+  "params": [
+   "entityID",
+   "latency",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "Latency"
+ },
+ {
+  "contract": "LocationBasedNetworkHealth",
+  "channels": [
+   "networkchannel"
+  ],
+  "fn": "RecordNetworkHealth",
+  "params": [
+   "entityID",
+   "healthStatus",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "NetworkHealth"
+ },
+ {
+  "contract": "LocationBasedNetworkLoad",
+  "channels": [
+   "networkchannel"
+  ],
+  "fn": "RecordNetworkLoad",
+  "params": [
+   "entityID",
+   "load",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "NetworkLoadRecord"
+ },
+ {
+  "contract": "LocationBasedPowerManagement",
+  "channels": [
+   "managementchannel"
+  ],
+  "fn": "SetPowerLevel",
+  "params": [
+   "entityID",
+   "powerLevel",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "PowerManagement"
+ },
+ {
+  "contract": "LocationBasedPriority",
+  "channels": [
+   "compliancechannel"
+  ],
+  "fn": "AssignPriority",
+  "params": [
+   "entityID",
+   "priority",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "Priority"
+ },
+ {
+  "contract": "LocationBasedQoS",
+  "channels": [
+   "analyticschannel"
+  ],
+  "fn": "AssignQoS",
+  "params": [
+   "entityID",
+   "qosLevel",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": true,
+  "record": "QoS"
+ },
+ {
+  "contract": "LocationBasedResourceAllocation",
+  "channels": [
+   "resourcechannel"
+  ],
+  "fn": "AllocateResource",
+  "params": [
+   "entityID",
+   "resourceID",
+   "amount",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "ResourceAllocation"
+ },
+ {
+  "contract": "LocationBasedRoaming",
+  "channels": [
+   "connectivitychannel"
+  ],
+  "fn": "PerformRoaming",
+  "params": [
+   "entityID",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": true,
+  "record": "RoamingRecord"
+ },
+ {
+  "contract": "LocationBasedSessionManagement",
+  "channels": [
+   "sessionchannel"
+  ],
+  "fn": "ManageSession",
+  "params": [
+   "entityID",
+   "sessionID",
+   "status",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "SessionManagement"
+ },
+ {
+  "contract": "LocationBasedSignalQuality",
+  "channels": [
+   "datachannel"
+  ],
+  "fn": "RecordSignalQuality",
+  "params": [
+   "entityID",
+   "signalQuality",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "SignalQuality"
+ },
+ {
+  "contract": "LocationBasedSignalStrength",
+  "channels": [
+   "datachannel",
+   "integrationchannel"
+  ],
+  "fn": "RecordSignalStrength",
+  "params": [
+   "entityID",
+   "signal",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "SignalStrengthRecord"
+ },
+ {
+  "contract": "LocationBasedStatus",
+  "channels": [
+   "monitoringchannel"
+  ],
+  "fn": "UpdateStatus",
+  "params": [
+   "entityID",
+   "status",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "Status"
+ },
+ {
+  "contract": "LocationBasedTraffic",
+  "channels": [
+   "trafficchannel"
+  ],
+  "fn": "RecordTraffic",
+  "params": [
+   "entityID",
+   "traffic",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "Traffic"
+ },
+ {
+  "contract": "LocationBasedUserActivity",
+  "channels": [
+   "integrationchannel"
+  ],
+  "fn": "RecordUserActivity",
+  "params": [
+   "userID",
+   "activity",
+   "x",
+   "y",
+   "seed"
+  ],
+  "wasLocked": false,
+  "record": "UserActivity"
+ }
+]
