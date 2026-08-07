@@ -5,7 +5,7 @@ set -e
 # ========================================
 # Configuration Variables
 # ========================================
-DASHBOARD_DIR="/root/6g-network"
+DASHBOARD_DIR="${ROOT_DIR:-/root/6g-network-raft}"
 SERVER_DIR="${DASHBOARD_DIR}/server"
 TEST_DIR="${DASHBOARD_DIR}/test-tools"
 CALIPER_WORKSPACE="${TEST_DIR}/caliper-workspace"
@@ -797,7 +797,7 @@ echo -e "\n${YELLOW}Creating helper scripts...${NC}"
 
 cat > "${TEST_DIR}/run-caliper.sh" << 'EOF'
 #!/bin/bash
-cd /root/6g-network/test-tools/caliper-workspace
+cd ${DASHBOARD_DIR}/test-tools/caliper-workspace
 npx caliper launch manager \
     --caliper-workspace ./ \
     --caliper-networkconfig networks/network-config.yaml \
@@ -814,7 +814,7 @@ cat > "${TEST_DIR}/run-tape.sh" << EOF
 TAPE_BIN="${TAPE_BIN}"
 
 CHANNEL=\${1:-iotchannel}
-CONFIG_FILE="/root/6g-network/test-tools/tape-configs/config-\${CHANNEL}.yaml"
+CONFIG_FILE="/root/6g-network-raft/test-tools/tape-configs/config-\${CHANNEL}.yaml"
 
 if [ ! -f "\$TAPE_BIN" ]; then
     echo "Error: tape binary not found at \$TAPE_BIN"
@@ -825,7 +825,7 @@ fi
 if [ ! -f "\$CONFIG_FILE" ]; then
     echo "Config file not found: \$CONFIG_FILE"
     echo "Available configs:"
-    ls -1 /root/6g-network/test-tools/tape-configs/
+    ls -1 /root/6g-network-raft/test-tools/tape-configs/
     exit 1
 fi
 
@@ -851,7 +851,7 @@ echo "Starting multi-organization load test..."
 
 for CHANNEL in "\${CHANNELS[@]}"; do
     echo "Testing channel: \$CHANNEL"
-    "\$TAPE_BIN" -c "/root/6g-network/test-tools/tape-configs/config-\${CHANNEL}.yaml" -n 500 &
+    "\$TAPE_BIN" -c "/root/6g-network-raft/test-tools/tape-configs/config-\${CHANNEL}.yaml" -n 500 &
 done
 
 wait
