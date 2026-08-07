@@ -24,7 +24,7 @@
 # ══════════════════════════════════════════════════════════════════════
 set -e
 
-ROOT_DIR="${ROOT_DIR:-/root/6g-network}"
+ROOT_DIR="${ROOT_DIR:-/root/6g-network-raft}"
 SEED="${SEED:-42}"
 ANTENNAS="${ANTENNAS:-8}"
 GRID="${GRID:-10000}"
