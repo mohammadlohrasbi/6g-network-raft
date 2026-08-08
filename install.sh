@@ -37,10 +37,10 @@ if [ ! -d "$TARGET" ]; then
   bad "پوشه $TARGET وجود ندارد."
   echo ""
   echo "  اگر هنوز مخزن را کلون نکرده‌اید:"
-  echo "    git clone https://github.com/mohammadlohrasbi/6g-network-raft.git $TARGET"
+  echo "    git clone https://github.com/mohammadlohrasbi/6g-network.git $TARGET"
   exit 1
 fi
-for d in scripts server public; do
+for d in scripts server public config; do
   if [ ! -d "$TARGET/$d" ]; then
     bad "$TARGET/$d نیست — این مخزن 6g-network نیست."
     exit 1
@@ -92,10 +92,13 @@ copy_one() {
   COPIED=$((COPIED+1))
 }
 
-for d in scripts server public; do
+for d in scripts server public config; do
   [ -d "$HERE/$d" ] || continue
   n=0
-  for f in "$HERE/$d"/*; do
+  # الگوی * فایل‌های نقطه‌دار را نمی‌گیرد، و config/.env دقیقاً یکی از
+  # آنهاست — بدون آن docker-compose پارامترهای TLS را نمی‌بیند و شبکه
+  # بی‌صدا plaintext بالا می‌آید.
+  for f in "$HERE/$d"/* "$HERE/$d"/.[!.]*; do
     [ -f "$f" ] || continue
     copy_one "$f" "$TARGET/$d/$(basename "$f")"
     n=$((n+1))
