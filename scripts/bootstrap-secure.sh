@@ -8,9 +8,9 @@
 #
 #   network.sh    مواد رمزنگاری و MSP می‌سازد
 #   setup-raft.sh نودهای اضافی و configtx را می‌سازد
-#   enable-tls.sh گواهی TLS همه نودها را صادر می‌کند
+#   set-tls.sh گواهی TLS همه نودها را صادر می‌کند
 #
-# ترتیب اهمیت دارد چون setup-raft پوشه نودهای جدید را می‌سازد و enable-tls
+# ترتیب اهمیت دارد چون setup-raft پوشه نودهای جدید را می‌سازد و set-tls
 # باید بعد از آن بیاید تا گواهی همه‌شان را از یک CA صادر کند. اگر برعکس
 # شود، نودهای جدید گواهی ندارند و Raft — که با pinning کار می‌کند —
 # آنها را نمی‌پذیرد.
@@ -55,7 +55,7 @@ echo "════════════════════════�
 
 # ── پیش‌نیازها ──
 step "بررسی پیش‌نیازها"
-for s in network.sh setup-raft.sh enable-tls.sh deploy-staged.sh seed-network.sh; do
+for s in network.sh setup-raft.sh set-tls.sh deploy-staged.sh seed-network.sh; do
     [ -f "$SCRIPTS/$s" ] || die "$s نیست"
 done
 ok "اسکریپت‌ها"
@@ -92,7 +92,7 @@ if [ "$SKIP_NETWORK" = "1" ]; then
     warn "رد شد (SKIP_NETWORK=1)"
 else
     # NETWORK_TLS=true باعث می‌شود tlscacerts در MSP قرار بگیرد — بدون آن
-    # Gateway ریشه اعتماد ندارد و enable-tls بعداً باید خودش اضافه کند.
+    # Gateway ریشه اعتماد ندارد و set-tls بعداً باید خودش اضافه کند.
     run env NETWORK_TLS=true ./network.sh || die "network.sh شکست خورد"
     ok "شبکه پایه ساخته شد"
 fi
@@ -106,7 +106,7 @@ ok "configtx و docker-compose برای $NODES نود"
 # بعد از Raft، تا پوشه نودهای جدید وجود داشته باشد و گواهی همه‌شان از
 # یک CA صادر شود.
 step "۳/۷  گواهی‌های TLS"
-run ./enable-tls.sh on || die "enable-tls.sh شکست خورد"
+run ./set-tls.sh on || die "set-tls.sh شکست خورد"
 ok "TLS روی همه نودها"
 
 # ── ۴) قراردادها ──
