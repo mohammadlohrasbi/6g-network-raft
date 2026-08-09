@@ -43,7 +43,8 @@ set -uo pipefail
 
 ROOT_DIR="${ROOT_DIR:-/root/6g-network-raft}"
 CONFIG_DIR="$ROOT_DIR/config"
-CRYPTO="${CRYPTO_BASE:-$ROOT_DIR/crypto-config}"
+# network.sh مواد رمزنگاری را داخل config/ می‌سازد، نه در ریشه پروژه.
+CRYPTO="${CRYPTO_BASE:-$CONFIG_DIR/crypto-config}"
 OORG="$CRYPTO/ordererOrganizations/example.com"
 MODE="${1:-3}"
 DRY_RUN="${DRY_RUN:-0}"
@@ -90,7 +91,7 @@ backup() {
 }
 
 # ══ ۱) هویت نودهای جدید ══════════════════════════════════════════════
-# فقط MSP. گواهی TLS کار enable-tls.sh است — اگر هر دو اسکریپت گواهی
+# فقط MSP. گواهی TLS کار network.sh است — اگر هر دو اسکریپت گواهی
 # بسازند، نیمی از خوشه گواهی CA و نیمی خودامضا می‌گیرد و Raft که با
 # pinning کار می‌کند نودها را نمی‌پذیرد. یک تولیدکننده، یک زنجیره اعتماد.
 make_orderer_msp() {
@@ -119,7 +120,10 @@ if [ "$MODE" != "solo" ]; then
     for i in $(seq 2 "$NODES"); do
         make_orderer_msp "$i" || exit 1
     done
-    warn "گواهی TLS این نودها را enable-tls.sh صادر می‌کند — بعد از این اسکریپت اجرایش کنید"
+    warn "این نودها هنوز گواهی TLS ندارند"
+    echo "     network.sh با ORDERER_NODES=$NODES آنها را می‌سازد؛ اگر پیش از"
+    echo "     این اسکریپت اجرا شده، دوباره بزنید:"
+    echo "       NETWORK_TLS=true ORDERER_NODES=$NODES ./network.sh"
 fi
 
 # ══ ۲) configtx.yaml ═════════════════════════════════════════════════
