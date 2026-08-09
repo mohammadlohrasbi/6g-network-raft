@@ -47,12 +47,15 @@ rm -rf /root/6g-network-raft/test-tools/bench-runs
 cd /path/to/6g-network-complete && ./install.sh /root/6g-network-raft
 ```
 
-⚠ دو شبکه هم‌زمان بالا نمی‌آیند — پورت‌ها و نام کانتینرها یکی است. پیش از
-راه‌اندازی این یکی، دیگری را پایین بیاورید:
+⚠ **دو شبکه هم‌زمان بالا نمی‌آیند** — پورت‌ها و نام کانتینرها یکی است.
+پیش از راه‌اندازی این یکی، دیگری را پایین بیاورید:
 
 ```bash
 cd /root/6g-network/config && docker compose down
 ```
+
+برای برگشتن به شبکهٔ قبلی، عکسش را انجام دهید. دفتر و داده‌های هر کدام در
+پوشهٔ خودش دست‌نخورده می‌ماند.
 
 **همیشه `docker compose` بدون خط تیره.** نسخهٔ v1 با داکر جدید در بازسازی
 کانتینر باگ `KeyError: ContainerConfig` می‌دهد.
@@ -72,10 +75,39 @@ cd /root/6g-network/config && docker compose down
 
 ## استقرار فایل‌های تحویلی
 
+بستهٔ تحویلی **مخزن کامل نیست** — فایل‌های پایه مثل `deploy-staged.sh`،
+`deploy_functions.sh` و `docker-compose-root-ca.yml` در آن نیستند. اگر
+پوشهٔ مقصد خالی است، اول مخزن را بگذارید:
+
+```bash
+git clone https://github.com/mohammadlohrasbi/6g-network.git /root/6g-network-raft
+```
+
+یا اگر شبکه‌ای در مسیر دیگری دارید و می‌خواهید نسخهٔ تازه‌ای بسازید:
+
+```bash
+cp -r /root/6g-network /root/6g-network-raft
+rm -rf /root/6g-network-raft/test-tools/bench-runs
+```
+
+سپس بسته:
+
 ```bash
 cd /path/to/6g-network-complete
-DRY_RUN=1 ./install.sh /root/6g-network-raft
-./install.sh /root/6g-network-raft
+DRY_RUN=1 ./install.sh /root/6g-network-raft   # اول نقشه
+./install.sh /root/6g-network-raft             # اجرای واقعی
+```
+
+**`DRY_RUN` چیزی کپی نمی‌کند.** اگر فقط آن را زدید و مستقیم سراغ گام بعد
+رفتید، هیچ فایلی نرسیده و همه‌چیز با نسخهٔ قدیمی اجرا می‌شود.
+
+تأیید — هر چهار باید جواب بدهند:
+
+```bash
+ls /root/6g-network-raft/config/.env
+ls /root/6g-network-raft/scripts/set-tls.sh
+ls /root/6g-network-raft/scripts/setup-raft.sh
+grep -c "_issue_tls" /root/6g-network-raft/scripts/network.sh    # > 0
 ```
 
 نصب‌کننده فقط کپی می‌کند و از هر فایل جایگزین‌شده پشتیبان می‌گیرد. هیچ
@@ -96,6 +128,30 @@ NODES=3 CHANNELS="datachannel" ./bootstrap-secure.sh
 کل زنجیره را با ترتیب درست اجرا می‌کند و پیش از پاک کردن شبکهٔ فعلی تأیید
 تعاملی می‌خواهد.
 
+هفت گام دارد و هر کدام را با عنوان اعلام می‌کند:
+
+```
+━━━ ۱/۷  مواد رمزنگاری و شبکه پایه ━━━
+━━━ ۲/۷  پیکربندی Raft ━━━
+━━━ ۳/۷  گواهی‌های TLS ━━━
+━━━ ۴/۷  تولید قراردادها ━━━
+━━━ ۵/۷  بلوک پیدایش ━━━
+━━━ ۶/۷  راه‌اندازی کانتینرها ━━━
+━━━ ۷/۷  استقرار کانال‌ها ━━━
+```
+
+#### ⚠ اگر جایی متوقف شد
+
+**اسکریپت‌های قبلی را دستی تکرار نکنید.** `bootstrap` با اولین خطا
+متوقف می‌شود، و اجرای دوبارهٔ `network.sh` سه دقیقه وقت می‌گیرد،
+همه‌چیز را پاک می‌کند، و اگر علت جای دیگری باشد مشکل را حل نمی‌کند.
+
+به‌جای آن، پیام خطای همان گام را بخوانید. هر گام دقیقاً می‌گوید چه چیزی
+کم است.
+
+پس از رفع مشکل، `bootstrap` را از ابتدا بزنید. گام یک دوباره اجرا
+می‌شود ولی این طبیعی است — `network.sh` هر بار از صفر می‌سازد.
+
 اگر ترجیح می‌دهید هر گام را ببینید، ادامه را دنبال کنید.
 
 ### A1 — مواد رمزنگاری و شبکهٔ پایه
@@ -112,13 +168,22 @@ NETWORK_TLS=true ORDERER_NODES=3 ./network.sh
 **گواهی‌ها حتی با `NETWORK_TLS=false` ساخته می‌شوند.** عمدی است: اگر
 نمی‌ساخت، روشن کردن TLS بعداً بازسازی کل شبکه را لازم داشت.
 
-بررسی:
+**مواد رمزنگاری در `config/crypto-config/` ساخته می‌شوند**، نه در ریشهٔ
+پروژه. اگر اسکریپتی گفت «مواد رمزنگاری نیست» در حالی که `network.sh`
+موفق بوده، احتمالاً جای اشتباه می‌گردد.
+
+بررسی — هر دو باید جواب بدهند:
 
 ```bash
 ls config/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/
+ls config/crypto-config/ordererOrganizations/example.com/orderers/
 ```
 
-انتظار: `server.crt`، `server.key`، `ca.crt`، `client.crt`، `client.key`.
+اولی: `server.crt`، `server.key`، `ca.crt`، `client.crt`، `client.key`.
+
+دومی باید **به تعداد `ORDERER_NODES`** پوشه نشان دهد. اگر فقط
+`orderer.example.com` را دید، متغیر منتقل نشده و خوشهٔ Raft بعداً دو نود
+بی‌گواهی خواهد داشت.
 
 ### A2 — پیکربندی Raft
 
@@ -454,6 +519,31 @@ cd ../scripts && ./deploy-staged.sh channel datachannel && ./seed-network.sh dat
 | `0/4 قرارداد commit شده` | کامپایل شکست خورده | خروجی build را بخوانید |
 | `KeyError: ContainerConfig` | compose نسخهٔ یک | `docker compose` |
 
+### راه‌اندازی از صفر
+
+خطاهایی که در عمل دیده شده‌اند و علت واقعی‌شان:
+
+| نشانه | علت | اصلاح |
+|---|---|---|
+| `✗ <اسکریپت> نیست` در بررسی پیش‌نیاز | بسته نصب نشده یا با `DRY_RUN` اجرا شده | `./install.sh /root/6g-network-raft` بدون `DRY_RUN` |
+| `✗ مواد رمزنگاری orderer اصلی نیست` بعد از یک `network.sh` موفق | اسکریپت در مسیر اشتباه می‌گردد | نسخهٔ جدید `setup-raft.sh` |
+| `.env` نیست | نسخهٔ قدیمی `install.sh` پوشهٔ `config/` را کپی نمی‌کرد | نسخهٔ جدید `install.sh` |
+| فقط یک پوشهٔ orderer ساخته شد | `ORDERER_NODES` منتقل نشده | `NETWORK_TLS=true ORDERER_NODES=3 ./network.sh` |
+| پوشهٔ `tls/` خالی است | `network.sh` قدیمی است | `grep -c _issue_tls scripts/network.sh` باید بیش از صفر باشد |
+| `mount ... not a directory` | داکر به‌جای فایل گم‌شده پوشه ساخته | آن مسیر را `rm -rf` کنید |
+
+**تشخیص سریع پیش از هر اجرا:**
+
+```bash
+cd /root/6g-network-raft
+ls config/.env                                    # باید باشد
+grep -c "_issue_tls" scripts/network.sh           # باید > 0
+ls scripts/set-tls.sh scripts/setup-raft.sh       # هر دو
+```
+
+اگر هرکدام جواب نداد، نصب کامل نشده و ادامه دادن فقط همان خطاها را
+تکرار می‌کند.
+
 ### Raft
 
 | نشانه | علت | اصلاح |
@@ -461,6 +551,7 @@ cd ../scripts && ./deploy-staged.sh channel datachannel && ./seed-network.sh dat
 | رهبر انتخاب نمی‌شود | profile با configtx نمی‌خواند | `--profile raft` با `setup-raft.sh 3` |
 | `no TLS certificate` | گواهی خوشه نیست | `NETWORK_TLS=true ORDERER_NODES=3 ./network.sh` |
 | اوردررها همدیگر را نمی‌بینند | پورت ۷۰۵۳ | `docker logs` هر نود |
+| `cacerts` پیدا نشد هنگام `configtxgen` | `crypto-config` ناقص است | `network.sh` را کامل اجرا کنید |
 
 ### TLS
 
@@ -509,6 +600,13 @@ systemctl start dashboard
 ```
 
 **پس از هر `git pull`:** `bash server/patch-index.sh`
+
+**اگر واقعاً از صفر می‌خواهید:** `network.sh` کانتینرها و volumeها را پاک
+می‌کند ولی شبکهٔ داکر را نه. برای پاک‌سازی کامل:
+
+```bash
+docker network rm 6g-network 2>/dev/null
+```
 
 **پاک‌سازی دیسک:** `go clean -cache` و `docker image prune -f` امن‌اند.
 **هرگز `docker volume prune` یا `docker compose down -v` نزنید** — دفتر
