@@ -93,7 +93,9 @@ if [ "$SKIP_NETWORK" = "1" ]; then
 else
     # NETWORK_TLS=true باعث می‌شود tlscacerts در MSP قرار بگیرد — بدون آن
     # Gateway ریشه اعتماد ندارد و set-tls بعداً باید خودش اضافه کند.
-    run env NETWORK_TLS=true ./network.sh || die "network.sh شکست خورد"
+    # ORDERER_NODES هم لازم است: بدون آن network.sh فقط برای یک orderer
+    # هویت و گواهی می‌سازد و خوشه Raft بعداً دو نود بی‌گواهی خواهد داشت.
+    run env NETWORK_TLS=true ORDERER_NODES="$NODES" ./network.sh || die "network.sh شکست خورد"
     ok "شبکه پایه ساخته شد"
 fi
 
