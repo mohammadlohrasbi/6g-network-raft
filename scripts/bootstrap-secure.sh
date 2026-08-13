@@ -159,7 +159,36 @@ fi
 # consenter ها داخل بلوک پیدایش می‌روند.
 step "۵/۷  بلوک پیدایش"
 run ./deploy-staged.sh artifacts || die "ساخت آرتیفکت شکست خورد"
-ok "بلوک پیدایش با etcdraft"
+
+# بلوک پیدایش را deploy-staged نمی‌سازد — فقط فایل‌های .tx کانال‌ها را.
+# بلوک را network.sh می‌سازد، ولی آن پیش از setup-raft اجرا شده و در آن
+# لحظه configtx هنوز solo بوده. پس اینجا از نو ساخته می‌شود تا etcdraft و
+# گواهی consenter ها واقعاً داخلش بنشینند.
+#
+# نشانه‌اش وقتی این گام جا بیفتد: orderer با «consensus type: solo» بالا
+# می‌آید هرچند configtx.yaml می‌گوید etcdraft.
+if [ "$DRY_RUN" = "1" ]; then
+    echo "    \$ configtxgen -profile OrdererGenesis -channelID system-channel \\"
+    echo "        -outputBlock channel-artifacts/genesis.block"
+else
+    rm -f "$CONFIG/channel-artifacts/genesis.block"
+    (cd "$CONFIG" && FABRIC_CFG_PATH="$CONFIG" configtxgen \
+        -profile OrdererGenesis -channelID system-channel \
+        -outputBlock channel-artifacts/genesis.block) >/dev/null 2>&1 \
+        || die "ساخت بلوک پیدایش شکست خورد"
+
+    # تأیید که نوع اجماع واقعاً در بلوک نشسته
+    if [ "$NODES" -gt 1 ]; then
+        if (cd "$CONFIG" && configtxgen -inspectBlock channel-artifacts/genesis.block 2>/dev/null) \
+             | grep -qi etcdraft; then
+            ok "بلوک پیدایش با etcdraft"
+        else
+            die "بلوک پیدایش ساخته شد ولی etcdraft در آن نیست — configtx.yaml را بررسی کنید"
+        fi
+    else
+        ok "بلوک پیدایش"
+    fi
+fi
 
 # ── ۶) بالا آوردن ──
 step "۶/۷  راه‌اندازی کانتینرها"
@@ -175,14 +204,22 @@ else
     elif [ "$NODES" -gt 1 ]; then
         PROFILE_ARG="--profile raft"
     fi
-    (cd "$CONFIG" && docker compose $PROFILE_ARG down --remove-orphans >/dev/null 2>&1
-     docker compose $PROFILE_ARG up -d) || die "بالا آوردن کانتینرها شکست خورد"
+    # volume ها باید بروند.
+    #
+    # orderer وقتی در volume خودش یک system channel پیدا کند می‌گوید
+    # «bootstrap نمی‌کنم» و بلوک پیدایش تازه را نادیده می‌گیرد — یعنی با
+    # نوع اجماع قبلی بالا می‌آید. این تنها جایی است که پاک کردن volume
+    # لازم است، و چون این اسکریپت از صفر می‌سازد، ضرری ندارد.
+    (cd "$CONFIG" && docker compose $PROFILE_ARG down --remove-orphans >/dev/null 2>&1) || true
+    docker volume ls -q 2>/dev/null | grep -E "orderer|peer0" | xargs -r docker volume rm >/dev/null 2>&1 || true
+    (cd "$CONFIG" && docker compose $PROFILE_ARG up -d) || die "بالا آوردن کانتینرها شکست خورد"
 
     echo -n "  انتظار برای انتخاب رهبر Raft"
     LEADER=""
     for i in $(seq 1 30); do
         sleep 2; echo -n "."
-        LEADER=$(docker logs orderer.example.com 2>&1 | grep -oi "leader.*changed\|became leader\|Raft leader" | tail -1)
+        LEADER=$(docker logs orderer.example.com 2>&1 \
+            | grep -oiE "became leader at term|leader changed|Raft leader" | tail -1)
         [ -n "$LEADER" ] && break
     done
     echo ""
