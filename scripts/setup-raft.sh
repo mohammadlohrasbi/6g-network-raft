@@ -178,6 +178,10 @@ SOLO
     for i in $(seq 2 "$NODES"); do
         echo "    - orderer${i}.example.com:$(orderer_port "orderer${i}.example.com" $((7050 + (i-1)*1000)))"
     done
+    # پورت consenter باید همان پورتی باشد که سرویس خوشه روی آن گوش می‌دهد.
+    # چون listener جدا برداشته شده، خوشه روی پورت عمومی همان نود است — پس
+    # همان عددی که compose برای GENERAL_LISTENPORT دارد.
+    #
     # مسیرها نسبی‌اند، دقیقاً مثل MSPDir در همین فایل. configtxgen روی
     # هاست اجرا می‌شود و نه داخل کانتینر، پس مسیر داخل‌کانتینری /crypto
     # برایش وجود ندارد و بلوک پیدایش ساخته نمی‌شود.
@@ -185,12 +189,12 @@ SOLO
     echo "    Consenters:"
     # نود اول
     echo "      - Host: orderer.example.com"
-    echo "        Port: 7053"
+    echo "        Port: $(orderer_port orderer.example.com 7050)"
     echo "        ClientTLSCert: ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/client.crt"
     echo "        ServerTLSCert: ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt"
     for i in $(seq 2 "$NODES"); do
         echo "      - Host: orderer${i}.example.com"
-        echo "        Port: 7053"
+        echo "        Port: $(orderer_port "orderer${i}.example.com" $((7050 + (i-1)*1000)))"
         echo "        ClientTLSCert: ./crypto-config/ordererOrganizations/example.com/orderers/orderer${i}.example.com/tls/client.crt"
         echo "        ServerTLSCert: ./crypto-config/ordererOrganizations/example.com/orderers/orderer${i}.example.com/tls/server.crt"
     done
