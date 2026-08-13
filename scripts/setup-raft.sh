@@ -132,6 +132,30 @@ echo "پیکربندی کانال"
 echo "────────────────────────────────────────────"
 backup
 
+# پورت رو‌به‌کلاینت یک orderer، خوانده از docker-compose.
+#
+# با فرمول ساختنش شکننده است: اگر پورت‌ها در compose عوض شوند، configtx
+# ساکت از آنها جدا می‌شود و کلاینت‌ها به پورتی وصل می‌شوند که کسی گوش
+# نمی‌دهد. اگر به هر دلیل پیدا نشد، مقدار پیش‌فرضِ فراخوان برمی‌گردد —
+# خالی برگرداندن یعنی YAML بی‌پورت که به دیکشنری تبدیل می‌شود، نه رشته.
+orderer_port() {
+    local name="$1" fallback="$2" p=""
+    if [ -f "$CONFIG_DIR/docker-compose.yml" ]; then
+        p="$(awk -v svc="  ${name}:" '
+            $0 == svc { inside = 1; next }
+            inside && /^  [^ ]/ { inside = 0 }
+            inside && /ORDERER_GENERAL_LISTENPORT=/ {
+                sub(/.*ORDERER_GENERAL_LISTENPORT=/, "")
+                gsub(/[^0-9]/, "")
+                if (length($0) > 0) { print; exit }
+            }' "$CONFIG_DIR/docker-compose.yml" 2>/dev/null)"
+    fi
+    case "$p" in
+        ''|*[!0-9]*) echo "$fallback" ;;
+        *)           echo "$p" ;;
+    esac
+}
+
 build_orderer_block() {
     if [ "$MODE" = "solo" ]; then
         cat <<'SOLO'
@@ -146,10 +170,14 @@ SOLO
     echo "Orderer: &OrdererDefaults"
     echo "  OrdererType: etcdraft"
     echo "  Addresses:"
-    echo "    - orderer.example.com:7050"
+    # پورت رو‌به‌کلاینت هر نود از docker-compose خوانده می‌شود، نه از یک
+    # فرمول. اگر این دو از هم جدا شوند، کلاینت‌ها به پورتی وصل می‌شوند که
+    # کسی آنجا گوش نمی‌دهد — و «connection refused» ربطش به configtx را
+    # نشان نمی‌دهد.
+    echo "    - orderer.example.com:$(orderer_port orderer.example.com 7050)"
     for i in $(seq 2 "$NODES"); do
-        echo "    - orderer${i}.example.com:$((7050 + (i-1)*1000)):"
-    done | sed 's/:$//'
+        echo "    - orderer${i}.example.com:$(orderer_port "orderer${i}.example.com" $((7050 + (i-1)*1000)))"
+    done
     # مسیرها نسبی‌اند، دقیقاً مثل MSPDir در همین فایل. configtxgen روی
     # هاست اجرا می‌شود و نه داخل کانتینر، پس مسیر داخل‌کانتینری /crypto
     # برایش وجود ندارد و بلوک پیدایش ساخته نمی‌شود.
@@ -195,6 +223,106 @@ s = pat.sub(new.rstrip() + "\n", s)
 open(path, 'w').write(s)
 PYEOF
     if [ $? -ne 0 ]; then bad "ویرایش configtx.yaml ناموفق"; exit 1; fi
+
+    # OrdererEndpoints سازمان OrdererOrg هم باید همه نودها را بشناسد.
+    #
+    # با Capabilities V2_0 فابریک این فهرست را بر Addresses سراسری ترجیح
+    # می‌دهد. اگر فقط یک نود در آن باشد، کلاینت‌ها بقیه خوشه را نمی‌بینند
+    # و افتادن آن یک نود کل شبکه را می‌خواباند — یعنی دقیقاً همان تحمل
+    # خطایی که Raft برایش هست از بین می‌رود.
+    python3 - "$CONFIG_DIR/configtx.yaml" "$MODE" "$NODES" "$CONFIG_DIR/docker-compose.yml" <<'PYEP'
+import re, sys
+path, mode, nodes, compose = sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4]
+
+def port_of(name, fallback):
+    try:
+        txt = open(compose).read()
+    except OSError:
+        return fallback
+    m = re.search(r'^  %s:\n(?:(?:    |\n).*\n)*?.*ORDERER_GENERAL_LISTENPORT=(\d+)'
+                  % re.escape(name), txt, re.M)
+    return m.group(1) if m else fallback
+
+names = ['orderer.example.com'] + [
+    'orderer%d.example.com' % i for i in range(2, nodes + 1)
+] if mode != 'solo' else ['orderer.example.com']
+
+eps = ['orderer.example.com:%s' % port_of('orderer.example.com', '7050')]
+if mode != 'solo':
+    for i in range(2, nodes + 1):
+        n = 'orderer%d.example.com' % i
+        eps.append('%s:%s' % (n, port_of(n, str(7050 + (i - 1) * 1000))))
+
+s = open(path).read()
+block = '    OrdererEndpoints:\n' + ''.join('      - %s\n' % e for e in eps)
+pat = re.compile(r'^    OrdererEndpoints:\n(?:      - .*\n)+', re.M)
+if pat.search(s):
+    s = pat.sub(block, s, count=1)
+    open(path, 'w').write(s)
+PYEP
+    ok "OrdererEndpoints — $([ "$MODE" = solo ] && echo 1 || echo "$NODES") نود"
+
+    # تأیید اینکه فایل حاصل واقعاً معتبر است و آنچه انتظار داریم در آن هست.
+    #
+    # جایگزینی متنی روی YAML شکننده است: یک تورفتگی اشتباه، فایلی می‌سازد
+    # که configtxgen می‌پذیرد ولی محتوایش آن چیزی نیست که فکر می‌کنیم — و
+    # نتیجه‌اش orderer ای است که با نوع اجماع اشتباه بالا می‌آید بی‌آنکه
+    # هیچ خطایی دیده شود.
+    if command -v python3 >/dev/null 2>&1; then
+        python3 - "$CONFIG_DIR/configtx.yaml" "$MODE" "$NODES" <<'PYVERIFY'
+import sys, yaml
+path, mode, nodes = sys.argv[1], sys.argv[2], int(sys.argv[3])
+try:
+    d = yaml.safe_load(open(path))
+except Exception as e:
+    print("  configtx.yaml معتبر نیست: %s" % e, file=sys.stderr); sys.exit(1)
+
+o = d.get('Orderer') or {}
+want = 'solo' if mode == 'solo' else 'etcdraft'
+if o.get('OrdererType') != want:
+    print("  OrdererType برابر %r است، انتظار %r" % (o.get('OrdererType'), want), file=sys.stderr)
+    sys.exit(1)
+
+# Addresses باید رشته «host:port» باشد. اگر پورت جا بیفتد، YAML خط را
+# کلید دیکشنری می‌فهمد و به‌جای رشته یک map می‌سازد — configtxgen قبولش
+# می‌کند ولی آدرس بی‌معنا در بلوک پیدایش می‌نشیند.
+addrs = o.get('Addresses') or []
+if len(addrs) != (1 if mode == 'solo' else nodes):
+    print("  %d آدرس نوشته شد، انتظار %d" % (len(addrs), 1 if mode == 'solo' else nodes), file=sys.stderr)
+    sys.exit(1)
+for a in addrs:
+    if not isinstance(a, str) or ':' not in a or not a.rsplit(':', 1)[1].isdigit():
+        print("  آدرس %r معتبر نیست — باید «host:port» باشد" % (a,), file=sys.stderr)
+        sys.exit(1)
+
+if want == 'etcdraft':
+    cs = (o.get('EtcdRaft') or {}).get('Consenters') or []
+    if len(cs) != nodes:
+        print("  %d consenter نوشته شد، انتظار %d" % (len(cs), nodes), file=sys.stderr)
+        sys.exit(1)
+    for c in cs:
+        for k in ('Host', 'Port', 'ClientTLSCert', 'ServerTLSCert'):
+            if not c.get(k):
+                print("  consenter %s فیلد %s ندارد" % (c.get('Host', '?'), k), file=sys.stderr)
+                sys.exit(1)
+        if not str(c['ClientTLSCert']).startswith('./'):
+            print("  مسیر گواهی %s مطلق است — configtxgen روی هاست اجرا می‌شود و نسبی می‌خواهد" % c['Host'], file=sys.stderr)
+            sys.exit(1)
+else:
+    if 'EtcdRaft' in o:
+        print("  EtcdRaft هنوز در فایل هست", file=sys.stderr); sys.exit(1)
+
+# آنچه نباید عوض شده باشد
+for k in ('BatchTimeout', 'BatchSize', 'Policies'):
+    if k not in o:
+        print("  %s از بلوک Orderer گم شد" % k, file=sys.stderr); sys.exit(1)
+PYVERIFY
+        if [ $? -ne 0 ]; then
+            bad "configtx.yaml پس از ویرایش سالم نیست — از پشتیبان بازگردانید:"
+            echo "     cp $BACKUP/configtx.yaml $CONFIG_DIR/"
+            exit 1
+        fi
+    fi
     ok "configtx.yaml — نوع سرویس ترتیب‌دهی به $([ "$MODE" = solo ] && echo solo || echo "etcdraft با $NODES نود") تغییر کرد"
 fi
 
