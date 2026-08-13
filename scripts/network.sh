@@ -20,6 +20,7 @@ export FABRIC_CFG_PATH="$CONFIG_DIR"
 log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"; }
 success() { log "موفق: $*"; }
 error() { log "خطا: $*"; exit 1; }
+warn() { log "هشدار: $*"; }
 
 CHANNELS=(networkchannel resourcechannel)
 declare -A ORG_PORTS=(
@@ -498,10 +499,47 @@ EOF
     chmod 600 "$out/server.key" "$out/client.key"
   }
 
+  # صدور گواهی TLS یک نود.
+  #
+  # اگر CA در دسترس نباشد، fallback خودامضا می‌سازد. برای یک peer تنها
+  # بی‌ضرر است، ولی برای خوشه Raft کشنده: نودها با TLS pinning همدیگر را
+  # می‌شناسند، و وقتی هر کدام ریشه خودش باشد هیچ‌کدام دیگری را تأیید
+  # نمی‌کند. نتیجه «tls: bad certificate» و خوشه‌ای که هرگز رهبر انتخاب
+  # نمی‌کند — بی‌آنکه هیچ خطایی در این مرحله دیده شود.
+  #
+  # پس در حالت Raft، افتادن به fallback یک شکست است نه یک جایگزین.
   _issue_tls() {
     local cn="$1" secret="$2" out="$3"
-    [ -f "$out/server.crt" ] && return 0
-    _enroll_tls "$cn" "$secret" "$out" || _selfsign_tls "$cn" "$out"
+    # گواهی موجود فقط وقتی پذیرفته می‌شود که از CA آمده باشد. خودامضای
+    # مانده از اجرای قبلی باید دور ریخته شود، وگرنه اجرای دوباره با CA
+    # سالم هم چیزی را درست نمی‌کند.
+    if [ -f "$out/server.crt" ]; then
+      local iss
+      iss="$(openssl x509 -in "$out/server.crt" -noout -issuer 2>/dev/null)"
+      if echo "$iss" | grep -q "rca-main"; then
+        return 0
+      fi
+      warn "  گواهی $cn خودامضا بود — دور ریخته شد"
+      rm -f "$out"/server.crt "$out"/server.key "$out"/ca.crt \
+            "$out"/client.crt "$out"/client.key
+    fi
+
+    if _enroll_tls "$cn" "$secret" "$out"; then
+      return 0
+    fi
+
+    if [ "${ORDERER_NODES:-1}" -gt 1 ] && echo "$cn" | grep -q orderer; then
+      error "صدور گواهی $cn از CA ناموفق بود.
+
+  برای خوشه Raft گواهی خودامضا کار نمی‌کند — نودها یکدیگر را با pinning
+  می‌شناسند و ریشه‌های جدا همدیگر را تأیید نمی‌کنند.
+
+  بررسی کنید CA بالا باشد:
+    docker ps --format '{{.Names}}' | grep -E 'rca-main|root-ca'
+    cd $CONFIG_DIR && docker compose -f docker-compose-root-ca.yml up -d"
+    fi
+
+    _selfsign_tls "$cn" "$out"
   }
 
   log "تولید گواهی‌های TLS"
