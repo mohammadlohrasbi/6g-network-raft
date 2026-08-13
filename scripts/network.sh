@@ -364,6 +364,14 @@ EOF
   RCA_CERT="$INTERMEDIATE_DIR/ca-cert.pem"
   ROOT_CERT="$CRYPTO_DIR/root-ca/ca-cert.pem"
 
+  # زنجیره اعتماد TLS: گواهی CA میانی که واقعاً نودها را امضا می‌کند، به
+  # همراه ریشه. ترتیب مهم است — امضاکننده مستقیم اول.
+  _tls_chain() {
+    local mid="$CRYPTO_DIR/intermediate-ca/ca-cert.pem"
+    [ -f "$mid" ] && cat "$mid"
+    [ -f "$ROOT_CERT" ] && cat "$ROOT_CERT"
+  }
+
   if [ ! -f "$RCA_CERT" ] && [ -f "$INTERMEDIATE_DIR/ca-chain.pem" ]; then
     awk '/-----BEGIN CERTIFICATE-----/{p=1; count++} p && count==1{print} /-----END CERTIFICATE-----/ && count==1{p=0}' \
       "$INTERMEDIATE_DIR/ca-chain.pem" > "$RCA_CERT"
@@ -410,9 +418,19 @@ EOF
   # نتیجه بگیرد که باید با TLS/mutual-TLS به peer ها و orderer وصل شود و با
   # خطای «both Key and Certificate are required when using mutual TLS» شکست بخورد.
   # برای فعال‌سازی TLS: NETWORK_TLS=true ./network.sh
+  #
+  # محتوای tlscacerts باید **امضاکننده واقعی گواهی TLS نودها** باشد، نه
+  # گواهی ریشه. گواهی‌ها را CA میانی (rca-main) صادر می‌کند، پس اگر فقط
+  # ریشه اینجا بنشیند، اوردرر هنگام ساخت کانال گواهی consenter را
+  # نمی‌شناسد:
+  #
+  #   consenter ... has invalid certificate: x509: certificate signed by
+  #   unknown authority
+  #
+  # زنجیره کامل (میانی + ریشه) نوشته می‌شود تا هر دو حالت پوشش داده شود.
   if [ "${NETWORK_TLS:-false}" = "true" ]; then
     mkdir -p "$OORG/msp/tlscacerts"
-    cp "$ROOT_CERT" "$OORG/msp/tlscacerts/ca-cert.pem"
+    _tls_chain > "$OORG/msp/tlscacerts/ca-cert.pem"
   fi
 
   mkdir -p "$OORG/msp/admincerts" "$OORG/orderers/orderer.example.com/msp/admincerts"
@@ -439,7 +457,7 @@ EOF
     # tlscacerts فقط وقتی TLS روی سیم فعال است (توضیح در بخش MSP اوردرر)
     if [ "${NETWORK_TLS:-false}" = "true" ]; then
       mkdir -p "$PORG/msp/tlscacerts"
-      cp "$ROOT_CERT" "$PORG/msp/tlscacerts/ca-cert.pem"
+      _tls_chain > "$PORG/msp/tlscacerts/ca-cert.pem"
     fi
 
     mkdir -p "$PORG/msp/admincerts" "$PORG/peers/peer0.org${i}.example.com/msp/admincerts"
