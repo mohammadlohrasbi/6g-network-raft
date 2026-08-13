@@ -630,6 +630,8 @@ ls scripts/set-tls.sh scripts/setup-raft.sh       # هر دو
 | `refers to undefined network` | نسخهٔ قدیمی `setup-raft.sh` سرویس تزریق می‌کرد | نسخهٔ جدید — profile را به کار می‌برد |
 | `no TLS certificate` | گواهی خوشه نیست | `NETWORK_TLS=true ORDERER_NODES=3 ./network.sh` |
 | `tls: bad certificate` بین اوردررها | گواهی‌ها ریشهٔ مشترک ندارند | بررسی `issuer` هر سه — همه باید `rca-main` باشند |
+| `Failed to get user: sql: no rows in result set` | اوردررهای Raft در CA ثبت‌نام نشده‌اند | نسخهٔ جدید `network.sh` — هویت‌ها را در پیکربندی CA می‌سازد |
+| `Authentication failure` هنگام enroll | همان بالا | همان — و **بازسازی کامل لازم است**، چون هویت‌ها فقط هنگام ساخت CA تعریف می‌شوند |
 | رهبر انتخاب نمی‌شود با وجود ۳ نود بالا | همان بالا | CA را بالا بیاورید و گواهی‌ها را بازسازی کنید |
 | اوردررها همدیگر را نمی‌بینند | پورت ۷۰۵۳ | `docker logs` هر نود |
 | `cacerts` پیدا نشد هنگام `configtxgen` | `crypto-config` ناقص است | `network.sh` را کامل اجرا کنید |
