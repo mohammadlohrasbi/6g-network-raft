@@ -78,6 +78,13 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      # وقتی سرویس خوشه Raft روی همان پورت عمومی اوردرر باشد، فابریک
+      # احراز هویت کلاینت را روی کل آن پورت لازم می‌کند. پس peer هنگام
+      # اتصال به اوردرر باید گواهی خودش را بفرستد، وگرنه:
+      #   tls: client didn't provide a certificate
+      # همان جفت TLS خود peer استفاده می‌شود؛ گواهی جداگانه لازم نیست.
+      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
       - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:2.5
@@ -121,6 +128,13 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      # وقتی سرویس خوشه Raft روی همان پورت عمومی اوردرر باشد، فابریک
+      # احراز هویت کلاینت را روی کل آن پورت لازم می‌کند. پس peer هنگام
+      # اتصال به اوردرر باید گواهی خودش را بفرستد، وگرنه:
+      #   tls: client didn't provide a certificate
+      # همان جفت TLS خود peer استفاده می‌شود؛ گواهی جداگانه لازم نیست.
+      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
       - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:2.5
@@ -164,6 +178,13 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      # وقتی سرویس خوشه Raft روی همان پورت عمومی اوردرر باشد، فابریک
+      # احراز هویت کلاینت را روی کل آن پورت لازم می‌کند. پس peer هنگام
+      # اتصال به اوردرر باید گواهی خودش را بفرستد، وگرنه:
+      #   tls: client didn't provide a certificate
+      # همان جفت TLS خود peer استفاده می‌شود؛ گواهی جداگانه لازم نیست.
+      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
       - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:2.5
@@ -207,6 +228,13 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      # وقتی سرویس خوشه Raft روی همان پورت عمومی اوردرر باشد، فابریک
+      # احراز هویت کلاینت را روی کل آن پورت لازم می‌کند. پس peer هنگام
+      # اتصال به اوردرر باید گواهی خودش را بفرستد، وگرنه:
+      #   tls: client didn't provide a certificate
+      # همان جفت TLS خود peer استفاده می‌شود؛ گواهی جداگانه لازم نیست.
+      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
       - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:2.5
@@ -250,6 +278,13 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      # وقتی سرویس خوشه Raft روی همان پورت عمومی اوردرر باشد، فابریک
+      # احراز هویت کلاینت را روی کل آن پورت لازم می‌کند. پس peer هنگام
+      # اتصال به اوردرر باید گواهی خودش را بفرستد، وگرنه:
+      #   tls: client didn't provide a certificate
+      # همان جفت TLS خود peer استفاده می‌شود؛ گواهی جداگانه لازم نیست.
+      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
       - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:2.5
@@ -293,6 +328,13 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      # وقتی سرویس خوشه Raft روی همان پورت عمومی اوردرر باشد، فابریک
+      # احراز هویت کلاینت را روی کل آن پورت لازم می‌کند. پس peer هنگام
+      # اتصال به اوردرر باید گواهی خودش را بفرستد، وگرنه:
+      #   tls: client didn't provide a certificate
+      # همان جفت TLS خود peer استفاده می‌شود؛ گواهی جداگانه لازم نیست.
+      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
       - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:2.5
@@ -336,6 +378,13 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      # وقتی سرویس خوشه Raft روی همان پورت عمومی اوردرر باشد، فابریک
+      # احراز هویت کلاینت را روی کل آن پورت لازم می‌کند. پس peer هنگام
+      # اتصال به اوردرر باید گواهی خودش را بفرستد، وگرنه:
+      #   tls: client didn't provide a certificate
+      # همان جفت TLS خود peer استفاده می‌شود؛ گواهی جداگانه لازم نیست.
+      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
       - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:2.5
@@ -379,6 +428,13 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      # وقتی سرویس خوشه Raft روی همان پورت عمومی اوردرر باشد، فابریک
+      # احراز هویت کلاینت را روی کل آن پورت لازم می‌کند. پس peer هنگام
+      # اتصال به اوردرر باید گواهی خودش را بفرستد، وگرنه:
+      #   tls: client didn't provide a certificate
+      # همان جفت TLS خود peer استفاده می‌شود؛ گواهی جداگانه لازم نیست.
+      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
       - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:2.5
