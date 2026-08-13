@@ -22,7 +22,16 @@ CONFIG="$ROOT_DIR/config"
 SCRIPTS="$ROOT_DIR/scripts"
 MODE="${1:-on}"
 C_TLS_PEER="/etc/hyperledger/fabric/tls"
-ORD_CA="/var/hyperledger/orderer/tls/ca.crt"
+# مسیر گواهی ریشه orderer **از دید کانتینر peer**.
+#
+# دستورهای peer داخل کانتینر peer اجرا می‌شوند، نه orderer. مسیر
+# /var/hyperledger/orderer/tls فقط داخل خود orderer وجود دارد، پس
+# --cafile با آن مسیر شکست می‌خورد:
+#
+#     unable to load orderer.tls.rootcert.file: no such file or directory
+#
+# docker-compose همان پوشه را با نام دیگری در peer ها هم mount می‌کند.
+ORD_CA="/etc/hyperledger/fabric/orderer-tls/ca.crt"
 
 GREEN='\033[0;32m'; RED='\033[0;31m'; NC='\033[0m'
 ok()  { echo -e "  ${GREEN}✓${NC} $*"; }
