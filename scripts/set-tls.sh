@@ -29,7 +29,15 @@ ok()  { echo -e "  ${GREEN}✓${NC} $*"; }
 die() { echo -e "  ${RED}✗${NC} $*"; exit 1; }
 
 case "$MODE" in on|off) ;; *) die "حالت باید on یا off باشد" ;; esac
-[ -f "$CONFIG/.env" ] || die "$CONFIG/.env نیست"
+# .env اگر نبود ساخته می‌شود. network.sh پوشه config را بازسازی می‌کند و
+# آن را با خود می‌برد، پس مردن اینجا یعنی راه‌اندازی از صفر همیشه در گام
+# سوم متوقف شود — در حالی که تنها کار لازم نوشتن یک خط است.
+[ -d "$CONFIG" ] || die "$CONFIG نیست — اول network.sh را اجرا کنید"
+if [ ! -f "$CONFIG/.env" ]; then
+    printf '# پیکربندی شبکه — docker-compose از اینجا می‌خواند\nNETWORK_TLS=false\n' \
+        > "$CONFIG/.env"
+    ok ".env ساخته شد"
+fi
 
 echo ""
 echo "$([ "$MODE" = on ] && echo روشن || echo خاموش) کردن TLS"
