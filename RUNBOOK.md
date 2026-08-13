@@ -312,7 +312,27 @@ node check-go.js generateChaincodes_spatial.sh         # ✅
 
 ```bash
 ./deploy-staged.sh artifacts
+
+cd ../config
+rm -f channel-artifacts/genesis.block
+configtxgen -profile OrdererGenesis -channelID system-channel \
+  -outputBlock channel-artifacts/genesis.block
+cd ../scripts
 ```
+
+**دو دستور لازم است، نه یکی.** `deploy-staged.sh artifacts` فقط فایل‌های
+`.tx` کانال‌ها را می‌سازد؛ بلوک پیدایش را `network.sh` ساخته — و آن پیش از
+`setup-raft.sh` اجرا شده، وقتی `configtx.yaml` هنوز `solo` بود.
+
+تأیید:
+
+```bash
+cd ../config
+configtxgen -inspectBlock channel-artifacts/genesis.block 2>&1 | grep -ci etcdraft
+```
+
+**باید عددی بیش از صفر بدهد.** اگر صفر داد، بلوک هنوز `solo` است و orderer
+با نوع اجماع اشتباه بالا می‌آید.
 
 **ترتیب اینجا حیاتی است.** بلوک پیدایش هم نوع سرویس ترتیب‌دهی و هم مسیر
 گواهی consenter‌ها را در خود دارد، پس باید پس از A2 و A3 ساخته شود.
@@ -321,9 +341,15 @@ node check-go.js generateChaincodes_spatial.sh         # ✅
 
 ```bash
 cd /root/6g-network-raft/config
+docker compose --profile raft down
+docker volume ls -q | grep -E "orderer|peer0" | xargs -r docker volume rm
 docker compose --profile raft up -d
 docker compose -f docker-compose-root-ca.yml up -d
 ```
+
+**پاک کردن volumeها هنگام تغییر نوع اجماع لازم است.** اگر orderer در volume
+خودش یک system channel پیدا کند می‌گوید «bootstrap نمی‌کنم» و بلوک پیدایش
+تازه را نادیده می‌گیرد — یعنی با نوع اجماع قبلی بالا می‌آید.
 
 سه حالت با همان یک فایل:
 
@@ -630,6 +656,9 @@ ls scripts/set-tls.sh scripts/setup-raft.sh       # هر دو
 | `refers to undefined network` | نسخهٔ قدیمی `setup-raft.sh` سرویس تزریق می‌کرد | نسخهٔ جدید — profile را به کار می‌برد |
 | `no TLS certificate` | گواهی خوشه نیست | `NETWORK_TLS=true ORDERER_NODES=3 ./network.sh` |
 | `tls: bad certificate` بین اوردررها | گواهی‌ها ریشهٔ مشترک ندارند | بررسی `issuer` هر سه — همه باید `rca-main` باشند |
+| `client didn't provide a certificate` بین اوردررها | mTLS خوشه فعال نیست | `ORDERER_GENERAL_TLS_CLIENTAUTHREQUIRED=true` — در compose جدید هست |
+| `consensus type: solo` با وجود `etcdraft` در configtx | بلوک پیدایش قدیمی در volume | volumeها را پاک کنید و بلوک را از نو بسازید |
+| انتخابات بی‌پایان، هر نود ۱ رأی | رأی‌ها رد و بدل نمی‌شوند | همان mTLS خوشه |
 | `Failed to get user: sql: no rows in result set` | اوردررهای Raft در CA ثبت‌نام نشده‌اند | نسخهٔ جدید `network.sh` — هویت‌ها را در پیکربندی CA می‌سازد |
 | `Authentication failure` هنگام enroll | همان بالا | همان — و **بازسازی کامل لازم است**، چون هویت‌ها فقط هنگام ساخت CA تعریف می‌شوند |
 | رهبر انتخاب نمی‌شود با وجود ۳ نود بالا | همان بالا | CA را بالا بیاورید و گواهی‌ها را بازسازی کنید |
