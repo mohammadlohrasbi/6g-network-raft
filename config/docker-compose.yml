@@ -20,6 +20,12 @@ services:
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
       - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      # Raft بین نودها mTLS دوطرفه لازم دارد. بدون این دو، فابریک مسیر
+      # گواهی کلاینت را می‌شناسد ولی هنگام اتصال نمی‌فرستد، و نود گیرنده
+      # با «client didn't provide a certificate» ردش می‌کند — خوشه تشکیل
+      # می‌شود، انتخابات شروع می‌شود، ولی هیچ رأیی رد و بدل نمی‌شود.
+      - ORDERER_GENERAL_TLS_CLIENTAUTHREQUIRED=${NETWORK_TLS:-false}
+      - ORDERER_GENERAL_TLS_CLIENTROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
       # listener جدا برای خوشه Raft. فابریک اجازه می‌دهد ارتباط بین نودهای
       # Raft روی پورت و گواهی خودش باشد — همان چیزی که Raft را بدون TLS
       # سراسری هم ممکن می‌کند. وقتی OrdererType=solo است بی‌اثر می‌ماند.
@@ -411,6 +417,12 @@ services:
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
       - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      # Raft بین نودها mTLS دوطرفه لازم دارد. بدون این دو، فابریک مسیر
+      # گواهی کلاینت را می‌شناسد ولی هنگام اتصال نمی‌فرستد، و نود گیرنده
+      # با «client didn't provide a certificate» ردش می‌کند — خوشه تشکیل
+      # می‌شود، انتخابات شروع می‌شود، ولی هیچ رأیی رد و بدل نمی‌شود.
+      - ORDERER_GENERAL_TLS_CLIENTAUTHREQUIRED=${NETWORK_TLS:-false}
+      - ORDERER_GENERAL_TLS_CLIENTROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
       - ORDERER_GENERAL_CLUSTER_LISTENADDRESS=0.0.0.0
       - ORDERER_GENERAL_CLUSTER_LISTENPORT=7053
       - ORDERER_GENERAL_CLUSTER_SERVERCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
@@ -454,6 +466,12 @@ services:
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
       - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      # Raft بین نودها mTLS دوطرفه لازم دارد. بدون این دو، فابریک مسیر
+      # گواهی کلاینت را می‌شناسد ولی هنگام اتصال نمی‌فرستد، و نود گیرنده
+      # با «client didn't provide a certificate» ردش می‌کند — خوشه تشکیل
+      # می‌شود، انتخابات شروع می‌شود، ولی هیچ رأیی رد و بدل نمی‌شود.
+      - ORDERER_GENERAL_TLS_CLIENTAUTHREQUIRED=${NETWORK_TLS:-false}
+      - ORDERER_GENERAL_TLS_CLIENTROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
       - ORDERER_GENERAL_CLUSTER_LISTENADDRESS=0.0.0.0
       - ORDERER_GENERAL_CLUSTER_LISTENPORT=7053
       - ORDERER_GENERAL_CLUSTER_SERVERCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
@@ -497,6 +515,12 @@ services:
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
       - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      # Raft بین نودها mTLS دوطرفه لازم دارد. بدون این دو، فابریک مسیر
+      # گواهی کلاینت را می‌شناسد ولی هنگام اتصال نمی‌فرستد، و نود گیرنده
+      # با «client didn't provide a certificate» ردش می‌کند — خوشه تشکیل
+      # می‌شود، انتخابات شروع می‌شود، ولی هیچ رأیی رد و بدل نمی‌شود.
+      - ORDERER_GENERAL_TLS_CLIENTAUTHREQUIRED=${NETWORK_TLS:-false}
+      - ORDERER_GENERAL_TLS_CLIENTROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
       - ORDERER_GENERAL_CLUSTER_LISTENADDRESS=0.0.0.0
       - ORDERER_GENERAL_CLUSTER_LISTENPORT=7053
       - ORDERER_GENERAL_CLUSTER_SERVERCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
@@ -540,6 +564,12 @@ services:
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
       - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      # Raft بین نودها mTLS دوطرفه لازم دارد. بدون این دو، فابریک مسیر
+      # گواهی کلاینت را می‌شناسد ولی هنگام اتصال نمی‌فرستد، و نود گیرنده
+      # با «client didn't provide a certificate» ردش می‌کند — خوشه تشکیل
+      # می‌شود، انتخابات شروع می‌شود، ولی هیچ رأیی رد و بدل نمی‌شود.
+      - ORDERER_GENERAL_TLS_CLIENTAUTHREQUIRED=${NETWORK_TLS:-false}
+      - ORDERER_GENERAL_TLS_CLIENTROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
       - ORDERER_GENERAL_CLUSTER_LISTENADDRESS=0.0.0.0
       - ORDERER_GENERAL_CLUSTER_LISTENPORT=7053
       - ORDERER_GENERAL_CLUSTER_SERVERCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
