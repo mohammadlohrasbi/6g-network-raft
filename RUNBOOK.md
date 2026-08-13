@@ -75,6 +75,24 @@ cd /root/6g-network/config && docker compose down
 
 ## استقرار فایل‌های تحویلی
 
+### اگر مخزن اختصاصی دارید
+
+اگر `6g-network-raft` مخزن جداگانه‌ای است که همه‌چیز در آن هست:
+
+```bash
+git clone https://github.com/mohammadlohrasbi/6g-network-raft.git /root/6g-network-raft
+cd /root/6g-network-raft
+chmod +x scripts/*.sh server/*.sh
+```
+
+`chmod` لازم است — گیت بیت اجرا را در برخی تنظیمات نگه نمی‌دارد.
+
+**نکته:** `config/.env` معمولاً در `.gitignore` است و با کلون نمی‌آید.
+`set-tls.sh` اگر نبود خودش می‌سازد، پس مشکلی پیش نمی‌آید — ولی اگر
+مقادیر خاصی در آن دارید، جداگانه کپی کنید.
+
+### اگر از بستهٔ تحویلی استفاده می‌کنید
+
 بستهٔ تحویلی **مخزن کامل نیست** — فایل‌های پایه مثل `deploy-staged.sh`،
 `deploy_functions.sh` و `docker-compose-root-ca.yml` در آن نیستند. اگر
 پوشهٔ مقصد خالی است، اول مخزن را بگذارید:
@@ -101,14 +119,21 @@ DRY_RUN=1 ./install.sh /root/6g-network-raft   # اول نقشه
 **`DRY_RUN` چیزی کپی نمی‌کند.** اگر فقط آن را زدید و مستقیم سراغ گام بعد
 رفتید، هیچ فایلی نرسیده و همه‌چیز با نسخهٔ قدیمی اجرا می‌شود.
 
-تأیید — هر چهار باید جواب بدهند:
+تأیید — این سه باید جواب بدهند:
 
 ```bash
-ls /root/6g-network-raft/config/.env
 ls /root/6g-network-raft/scripts/set-tls.sh
 ls /root/6g-network-raft/scripts/setup-raft.sh
 grep -c "_issue_tls" /root/6g-network-raft/scripts/network.sh    # > 0
 ```
+
+و بیت اجرا:
+
+```bash
+chmod +x /root/6g-network-raft/scripts/*.sh /root/6g-network-raft/server/*.sh
+```
+
+`config/.env` لازم نیست از قبل باشد — `set-tls.sh` اگر نبود می‌سازدش.
 
 نصب‌کننده فقط کپی می‌کند و از هر فایل جایگزین‌شده پشتیبان می‌گیرد. هیچ
 قراردادی تولید نمی‌کند و هیچ‌چیز مستقر نمی‌کند.
@@ -527,7 +552,8 @@ cd ../scripts && ./deploy-staged.sh channel datachannel && ./seed-network.sh dat
 |---|---|---|
 | `✗ <اسکریپت> نیست` در بررسی پیش‌نیاز | بسته نصب نشده یا با `DRY_RUN` اجرا شده | `./install.sh /root/6g-network-raft` بدون `DRY_RUN` |
 | `✗ مواد رمزنگاری orderer اصلی نیست` بعد از یک `network.sh` موفق | اسکریپت در مسیر اشتباه می‌گردد | نسخهٔ جدید `setup-raft.sh` |
-| `.env` نیست | نسخهٔ قدیمی `install.sh` پوشهٔ `config/` را کپی نمی‌کرد | نسخهٔ جدید `install.sh` |
+| `Permission denied` روی اسکریپت | بیت اجرا از گیت نیامده | `chmod +x scripts/*.sh` |
+| `.env نیست` | با کلون نمی‌آید یا `install.sh` قدیمی است | نسخهٔ جدید `set-tls.sh` خودش می‌سازد |
 | فقط یک پوشهٔ orderer ساخته شد | `ORDERER_NODES` منتقل نشده | `NETWORK_TLS=true ORDERER_NODES=3 ./network.sh` |
 | پوشهٔ `tls/` خالی است | `network.sh` قدیمی است | `grep -c _issue_tls scripts/network.sh` باید بیش از صفر باشد |
 | `mount ... not a directory` | داکر به‌جای فایل گم‌شده پوشه ساخته | آن مسیر را `rm -rf` کنید |
@@ -639,7 +665,7 @@ cd /root/6g-network-raft && git add -A && git commit -m "working state"
 
 **اسکریپت‌های TLS و Raft روی فابریک واقعی آزموده نشده‌اند.** ساختار
 فایل‌ها، رفت‌وبرگشت پیکربندی و ترتیب اجرا کامل آزموده شده، ولی اینکه خوشهٔ
-Raft با این گواهی‌ها رهبر انتخاب کند فقط روی سرور ffffشما معلوم می‌شود. گام A6
+Raft با این گواهی‌ها رهبر انتخاب کند فقط روی سرور شما معلوم می‌شود. گام A6
 نقطهٔ حقیقت است.
 
 **`deploy-staged.sh` حتی با صفر قرارداد commit شده «موفق» اعلام می‌کند.**
