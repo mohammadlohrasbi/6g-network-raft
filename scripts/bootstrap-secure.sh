@@ -149,8 +149,17 @@ step "۶/۷  راه‌اندازی کانتینرها"
 if [ "$DRY_RUN" = "1" ]; then
     echo "    \$ cd $CONFIG && docker compose down && docker compose up -d"
 else
-    (cd "$CONFIG" && docker compose down --remove-orphans >/dev/null 2>&1
-     docker compose up -d) || die "بالا آوردن کانتینرها شکست خورد"
+    # اوردررهای Raft در docker-compose با profile تعریف شده‌اند: بدون آن
+    # فقط یکی بالا می‌آید و خوشه‌ای که بلوک پیدایش سه نود اعلام کرده
+    # هرگز رهبر انتخاب نمی‌کند.
+    PROFILE_ARG=""
+    if [ "$NODES" -gt 3 ]; then
+        PROFILE_ARG="--profile raft5"
+    elif [ "$NODES" -gt 1 ]; then
+        PROFILE_ARG="--profile raft"
+    fi
+    (cd "$CONFIG" && docker compose $PROFILE_ARG down --remove-orphans >/dev/null 2>&1
+     docker compose $PROFILE_ARG up -d) || die "بالا آوردن کانتینرها شکست خورد"
 
     echo -n "  انتظار برای انتخاب رهبر Raft"
     LEADER=""
