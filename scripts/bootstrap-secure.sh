@@ -86,6 +86,19 @@ fi
 
 cd "$SCRIPTS" || die "به $SCRIPTS نمی‌رود"
 
+# ── ۰) هم‌راستاسازی مسیرها ──
+# چند اسکریپت مخزن مسیر پروژه را ثابت در خود دارند. اگر پروژه جای دیگری
+# باشد، آنها به فایلی اشاره می‌کنند که وجود ندارد — یا بدتر، به نسخه
+# قدیمی پروژه در مسیر اصلی.
+if [ -f "$SCRIPTS/fix-paths.sh" ]; then
+    step "۰/۷  هم‌راستاسازی مسیرها"
+    if [ "$DRY_RUN" = "1" ]; then
+        DRY_RUN=1 bash "$SCRIPTS/fix-paths.sh" "$ROOT_DIR" 2>&1 | tail -4
+    else
+        bash "$SCRIPTS/fix-paths.sh" "$ROOT_DIR" 2>&1 | grep -E "✓|✗|اصلاح‌شده" || true
+    fi
+fi
+
 # ── ۱) شبکه پایه ──
 step "۱/۷  مواد رمزنگاری و شبکه پایه"
 if [ "$SKIP_NETWORK" = "1" ]; then
