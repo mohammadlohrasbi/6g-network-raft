@@ -610,6 +610,10 @@ ls scripts/set-tls.sh scripts/setup-raft.sh       # هر دو
 | نشانه | علت | اصلاح |
 |---|---|---|
 | `tls: bad certificate` | گواهی و ریشه نمی‌خوانند | `network.sh` با `NETWORK_TLS=true` |
+| `unable to load orderer.tls.rootcert.file` | مسیر گواهی orderer از دید کانتینر peer غلط بود | نسخهٔ جدید `docker-compose.yml` و `set-tls.sh` |
+| `genesis block file not found` پس از خطای بالا | آبشاری است — کانال اصلاً ساخته نشده | ابتدا خطای اول را رفع کنید |
+| `number of peer addresses (8) does not match the number of TLS root cert files (1)` | با TLS هر `--peerAddresses` یک گواهی می‌خواهد | `./set-tls.sh on` نسخهٔ جدید |
+| `DeadlineExceeded ... RST_STREAM` هنگام approve | مهلت ۳۰ ثانیه با Raft و TLS کم است | `./set-tls.sh on` مهلت را ۳۰۰ ثانیه می‌کند |
 | CLI بی‌پاسخ | فلگ TLS ندارد | `./set-tls.sh on` دوباره |
 | Caliper وصل نمی‌شود | پروفایل هنوز `grpc://` | `node gen-caliper-network.js` |
 
