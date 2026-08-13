@@ -117,6 +117,27 @@ PYEOF
 done
 ok "گواهی به‌ازای هر peer در دستورهای چندنقطه‌ای"
 
+# ── ۲د) احراز هویت کلاینت در دستورهای رو به اوردرر ──
+#
+# سرویس خوشه Raft روی پورت عمومی اوردرر است، پس فابریک احراز هویت کلاینت
+# را روی آن پورت لازم می‌کند — نه فقط برای نودهای خوشه، بلکه برای هر
+# اتصالی. دستورهای peer باید گواهی خودشان را بفرستند:
+#
+#     tls: client didn't provide a certificate
+#
+# متغیرهای محیطی CORE_PEER_TLS_CLIENTCERT_FILE در docker-compose برای
+# کانتینر peer کار می‌کنند، ولی peer CLI در دستورهای رو به اوردرر فلگ
+# صریح می‌خواهد.
+for f in deploy_functions.sh deploy-staged.sh seed-network.sh upgrade-spatial.sh; do
+    p="$SCRIPTS/$f"
+    [ -f "$p" ] || continue
+    sed -i "s| --clientauth --certfile [^ ]* --keyfile [^ ]*||g" "$p"
+    if [ "$MODE" = "on" ]; then
+        sed -i "s|\(--tls --cafile [^ ]*\)|\1 --clientauth --certfile $C_TLS_PEER/server.crt --keyfile $C_TLS_PEER/server.key|g" "$p"
+    fi
+done
+ok "احراز هویت کلاینت در دستورهای رو به اوردرر"
+
 # ── ۲ج) مهلت انتظار رویداد ──
 #
 # با Raft هر تراکنش پیش از کامیت باید در اکثریت نودها تکرار شود، و با TLS
