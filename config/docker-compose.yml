@@ -29,10 +29,16 @@ services:
       # listener جدا برای خوشه Raft. فابریک اجازه می‌دهد ارتباط بین نودهای
       # Raft روی پورت و گواهی خودش باشد — همان چیزی که Raft را بدون TLS
       # سراسری هم ممکن می‌کند. وقتی OrdererType=solo است بی‌اثر می‌ماند.
-      - ORDERER_GENERAL_CLUSTER_LISTENADDRESS=0.0.0.0
-      - ORDERER_GENERAL_CLUSTER_LISTENPORT=7053
-      - ORDERER_GENERAL_CLUSTER_SERVERCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
-      - ORDERER_GENERAL_CLUSTER_SERVERPRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      # خوشه Raft روی همان پورت و گواهی عمومی کار می‌کند.
+      #
+      # نسخه قبلی listener جدا داشت (۷۰۵۳) — که فابریک برای حالتی پیش‌بینی
+      # کرده که TLS عمومی خاموش باشد و فقط خوشه رمزگذاری بخواهد. حالا که
+      # TLS همه‌جا روشن است آن پیچیدگی لازم نیست، و در عمل نودها روی آن
+      # پورت گواهی کلاینت نمی‌فرستادند: «tls: certificate required».
+      #
+      # با نبود ListenPort/ListenAddress/ServerCertificate/ServerPrivateKey،
+      # این مقادیر از بخش TLS عمومی به ارث می‌رسند و پورت خوشه همان پورت
+      # عمومی می‌شود — که باید با Port هر consenter در configtx بخواند.
       - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/var/hyperledger/orderer/tls/client.crt
       - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/var/hyperledger/orderer/tls/client.key
       - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
@@ -423,10 +429,16 @@ services:
       # می‌شود، انتخابات شروع می‌شود، ولی هیچ رأیی رد و بدل نمی‌شود.
       - ORDERER_GENERAL_TLS_CLIENTAUTHREQUIRED=${NETWORK_TLS:-false}
       - ORDERER_GENERAL_TLS_CLIENTROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
-      - ORDERER_GENERAL_CLUSTER_LISTENADDRESS=0.0.0.0
-      - ORDERER_GENERAL_CLUSTER_LISTENPORT=7053
-      - ORDERER_GENERAL_CLUSTER_SERVERCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
-      - ORDERER_GENERAL_CLUSTER_SERVERPRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      # خوشه Raft روی همان پورت و گواهی عمومی کار می‌کند.
+      #
+      # نسخه قبلی listener جدا داشت (۷۰۵۳) — که فابریک برای حالتی پیش‌بینی
+      # کرده که TLS عمومی خاموش باشد و فقط خوشه رمزگذاری بخواهد. حالا که
+      # TLS همه‌جا روشن است آن پیچیدگی لازم نیست، و در عمل نودها روی آن
+      # پورت گواهی کلاینت نمی‌فرستادند: «tls: certificate required».
+      #
+      # با نبود ListenPort/ListenAddress/ServerCertificate/ServerPrivateKey،
+      # این مقادیر از بخش TLS عمومی به ارث می‌رسند و پورت خوشه همان پورت
+      # عمومی می‌شود — که باید با Port هر consenter در configtx بخواند.
       - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/var/hyperledger/orderer/tls/client.crt
       - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/var/hyperledger/orderer/tls/client.key
       - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
@@ -472,10 +484,16 @@ services:
       # می‌شود، انتخابات شروع می‌شود، ولی هیچ رأیی رد و بدل نمی‌شود.
       - ORDERER_GENERAL_TLS_CLIENTAUTHREQUIRED=${NETWORK_TLS:-false}
       - ORDERER_GENERAL_TLS_CLIENTROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
-      - ORDERER_GENERAL_CLUSTER_LISTENADDRESS=0.0.0.0
-      - ORDERER_GENERAL_CLUSTER_LISTENPORT=7053
-      - ORDERER_GENERAL_CLUSTER_SERVERCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
-      - ORDERER_GENERAL_CLUSTER_SERVERPRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      # خوشه Raft روی همان پورت و گواهی عمومی کار می‌کند.
+      #
+      # نسخه قبلی listener جدا داشت (۷۰۵۳) — که فابریک برای حالتی پیش‌بینی
+      # کرده که TLS عمومی خاموش باشد و فقط خوشه رمزگذاری بخواهد. حالا که
+      # TLS همه‌جا روشن است آن پیچیدگی لازم نیست، و در عمل نودها روی آن
+      # پورت گواهی کلاینت نمی‌فرستادند: «tls: certificate required».
+      #
+      # با نبود ListenPort/ListenAddress/ServerCertificate/ServerPrivateKey،
+      # این مقادیر از بخش TLS عمومی به ارث می‌رسند و پورت خوشه همان پورت
+      # عمومی می‌شود — که باید با Port هر consenter در configtx بخواند.
       - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/var/hyperledger/orderer/tls/client.crt
       - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/var/hyperledger/orderer/tls/client.key
       - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
@@ -521,10 +539,16 @@ services:
       # می‌شود، انتخابات شروع می‌شود، ولی هیچ رأیی رد و بدل نمی‌شود.
       - ORDERER_GENERAL_TLS_CLIENTAUTHREQUIRED=${NETWORK_TLS:-false}
       - ORDERER_GENERAL_TLS_CLIENTROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
-      - ORDERER_GENERAL_CLUSTER_LISTENADDRESS=0.0.0.0
-      - ORDERER_GENERAL_CLUSTER_LISTENPORT=7053
-      - ORDERER_GENERAL_CLUSTER_SERVERCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
-      - ORDERER_GENERAL_CLUSTER_SERVERPRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      # خوشه Raft روی همان پورت و گواهی عمومی کار می‌کند.
+      #
+      # نسخه قبلی listener جدا داشت (۷۰۵۳) — که فابریک برای حالتی پیش‌بینی
+      # کرده که TLS عمومی خاموش باشد و فقط خوشه رمزگذاری بخواهد. حالا که
+      # TLS همه‌جا روشن است آن پیچیدگی لازم نیست، و در عمل نودها روی آن
+      # پورت گواهی کلاینت نمی‌فرستادند: «tls: certificate required».
+      #
+      # با نبود ListenPort/ListenAddress/ServerCertificate/ServerPrivateKey،
+      # این مقادیر از بخش TLS عمومی به ارث می‌رسند و پورت خوشه همان پورت
+      # عمومی می‌شود — که باید با Port هر consenter در configtx بخواند.
       - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/var/hyperledger/orderer/tls/client.crt
       - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/var/hyperledger/orderer/tls/client.key
       - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
@@ -570,10 +594,16 @@ services:
       # می‌شود، انتخابات شروع می‌شود، ولی هیچ رأیی رد و بدل نمی‌شود.
       - ORDERER_GENERAL_TLS_CLIENTAUTHREQUIRED=${NETWORK_TLS:-false}
       - ORDERER_GENERAL_TLS_CLIENTROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
-      - ORDERER_GENERAL_CLUSTER_LISTENADDRESS=0.0.0.0
-      - ORDERER_GENERAL_CLUSTER_LISTENPORT=7053
-      - ORDERER_GENERAL_CLUSTER_SERVERCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
-      - ORDERER_GENERAL_CLUSTER_SERVERPRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      # خوشه Raft روی همان پورت و گواهی عمومی کار می‌کند.
+      #
+      # نسخه قبلی listener جدا داشت (۷۰۵۳) — که فابریک برای حالتی پیش‌بینی
+      # کرده که TLS عمومی خاموش باشد و فقط خوشه رمزگذاری بخواهد. حالا که
+      # TLS همه‌جا روشن است آن پیچیدگی لازم نیست، و در عمل نودها روی آن
+      # پورت گواهی کلاینت نمی‌فرستادند: «tls: certificate required».
+      #
+      # با نبود ListenPort/ListenAddress/ServerCertificate/ServerPrivateKey،
+      # این مقادیر از بخش TLS عمومی به ارث می‌رسند و پورت خوشه همان پورت
+      # عمومی می‌شود — که باید با Port هر consenter در configtx بخواند.
       - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/var/hyperledger/orderer/tls/client.crt
       - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/var/hyperledger/orderer/tls/client.key
       - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
