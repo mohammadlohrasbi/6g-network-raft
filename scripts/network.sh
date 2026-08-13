@@ -212,6 +212,25 @@ registry:
         hf.Revoker: true
 EOF
 
+  # اوردررهای اضافی خوشه Raft.
+  #
+  # هویت‌ها در همین فایل پیکربندی CA تعریف می‌شوند و بعد از راه‌اندازی
+  # قابل افزودن نیستند. تا پیش از این فقط orderer.example.com اینجا بود،
+  # پس enroll نودهای ۲ و ۳ با «Failed to get user: sql: no rows in result
+  # set» رد می‌شد و network.sh به گواهی خودامضا می‌افتاد — که خوشه Raft را
+  # می‌خواباند بی‌آنکه خطایی در آن مرحله دیده شود.
+  for _n in $(seq 2 "${ORDERER_NODES:-1}"); do
+    cat >> "$INTERMEDIATE_DIR/fabric-ca-server-config.yaml" << EOF
+
+    - name: orderer${_n}.example.com
+      pass: ordererpw
+      type: orderer
+      affiliation: ""
+      attrs:
+        hf.Revoker: true
+EOF
+  done
+
   for i in {1..8}; do
     cat >> "$INTERMEDIATE_DIR/fabric-ca-server-config.yaml" << EOF
 
