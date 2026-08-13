@@ -199,123 +199,26 @@ PYEOF
 fi
 
 # ══ ۳) docker-compose ════════════════════════════════════════════════
+# هیچ کاری لازم نیست.
+#
+# نسخه اول این اسکریپت سرویس‌های orderer را خودش به فایل تزریق می‌کرد. ولی
+# docker-compose.yml حالا پارامتریک است و اوردررهای ۲ تا ۵ را با
+# compose profiles از قبل دارد:
+#
+#     orderer2, orderer3  →  profiles: ["raft", "raft5"]
+#     orderer4, orderer5  →  profiles: ["raft5"]
+#
+# یعنی دو سازوکار موازی وجود داشت و تداخلشان همان چیزی بود که با
+# «refers to undefined network» ظاهر می‌شد. حالا فقط یکی هست: profile.
 echo ""
 echo "کانتینرها"
 echo "────────────────────────────────────────────"
-
-compose_service() {
-    local i="$1"
-    local name
-    local port
-    if [ "$i" = "1" ]; then
-        name="orderer.example.com"; port=7050
-    else
-        name="orderer${i}.example.com"; port=$((7050 + (i-1)*1000))
-    fi
-    cat <<SVC
-
-  ${name}:
-    container_name: ${name}
-    image: hyperledger/fabric-orderer:2.5
-    environment:
-      - FABRIC_LOGGING_SPEC=INFO
-      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
-      - ORDERER_GENERAL_LISTENPORT=${port}
-      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
-      - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
-      - ORDERER_GENERAL_BOOTSTRAPMETHOD=file
-      - ORDERER_GENERAL_BOOTSTRAPFILE=/var/hyperledger/orderer/genesis.block
-      # رابط رو‌به‌کلاینت plaintext می‌ماند — همان چیزی که بقیه پشته
-      # انتظار دارد و تغییرش Gateway، Tape و Caliper را می‌شکند.
-      - ORDERER_GENERAL_TLS_ENABLED=false
-      # خوشه Raft روی پورت و گواهی خودش. فابریک اجازه می‌دهد این listener
-      # از رابط کلاینت جدا باشد، و همین است که Raft را بدون TLS سراسری
-      # ممکن می‌کند.
-      - ORDERER_GENERAL_CLUSTER_LISTENADDRESS=0.0.0.0
-      - ORDERER_GENERAL_CLUSTER_LISTENPORT=7053
-      - ORDERER_GENERAL_CLUSTER_SERVERCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
-      - ORDERER_GENERAL_CLUSTER_SERVERPRIVATEKEY=/var/hyperledger/orderer/tls/server.key
-      - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/var/hyperledger/orderer/tls/client.crt
-      - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/var/hyperledger/orderer/tls/client.key
-      - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
-      - ORDERER_CONSENSUS_WALDIR=/var/hyperledger/production/orderer/etcdraft/wal
-      - ORDERER_CONSENSUS_SNAPDIR=/var/hyperledger/production/orderer/etcdraft/snapshot
-    volumes:
-      - ./channel-artifacts/genesis.block:/var/hyperledger/orderer/genesis.block
-      - ${CRYPTO}/ordererOrganizations/example.com/orderers/${name}/msp:/var/hyperledger/orderer/msp
-      - ${CRYPTO}/ordererOrganizations/example.com/orderers/${name}/tls:/var/hyperledger/orderer/tls
-      - ${name}:/var/hyperledger/production/orderer
-    ports:
-      - 127.0.0.1:${port}:${port}
-    networks:
-      - fabric
-SVC
-}
-
-if [ "$DRY_RUN" = "1" ]; then
-    echo "  → افزودن $((NODES - 1)) سرویس orderer به docker-compose.yml"
+if [ "$MODE" = "solo" ]; then
+    ok "profile لازم نیست — docker compose up -d کافی است"
 else
-    # سرویس‌ها پیش از کلید volumes: درج می‌شوند و نامشان به آن بخش اضافه
-    # می‌شود. اجرای چندباره امن است: هر سرویس orderer قبلی اول برداشته
-    # می‌شود، پس تغییر ۳ به ۵ نود یا بازگشت به solo تمیز کار می‌کند.
-    EXTRA=""
-    if [ "$MODE" != "solo" ]; then
-        for i in $(seq 2 "$NODES"); do EXTRA="$EXTRA$(compose_service "$i")"; done
-    fi
-    RAFT_NAMES=""
-    if [ "$MODE" != "solo" ]; then
-        for i in $(seq 2 "$NODES"); do RAFT_NAMES="$RAFT_NAMES orderer${i}.example.com"; done
-    fi
-
-    EXTRA="$EXTRA" RAFT_NAMES="$RAFT_NAMES" python3 - "$CONFIG_DIR/docker-compose.yml" <<'PYEOF'
-import os, re, sys
-path = sys.argv[1]
-s = open(path).read()
-
-# هر سرویس orderer2..orderer63 که از اجرای قبلی مانده. مرز یک سرویس
-# خط بعدی با تورفتگی دو فاصله است، یا کلید volumes: در سطح بالا — و
-# چون سرویس‌های Raft آخرین بلوک پیش از volumes: هستند، هر دو حالت لازم
-# است، وگرنه آخرینشان جا می‌ماند.
-lines = s.split('\n')
-out, skip = [], False
-svc = re.compile(r'^  orderer([2-9]|[1-5][0-9]|6[0-3])\.example\.com:\s*$')
-for ln in lines:
-    if svc.match(ln):
-        skip = True
-        continue
-    if skip:
-        # پایان بلوک: خط ناخالی که تورفتگی‌اش کمتر از چهار فاصله است
-        if ln.strip() and not ln.startswith('    '):
-            skip = False
-        else:
-            continue
-    out.append(ln)
-s = '\n'.join(out)
-# نام volume ها
-s = re.sub(r'^  orderer([2-9]|[1-5][0-9]|6[0-3])\.example\.com:\s*$\n', '', s, flags=re.M)
-# خطوط خالی که از حذف سرویس‌ها مانده‌اند، تا بازگشت به solo فایل را
-# دقیقاً به حالت اولش برگرداند و diff با گیت تمیز بماند.
-s = re.sub(r'\n{3,}(?=volumes:)', '\n\n', s)
-
-extra = os.environ.get('EXTRA', '')
-names = os.environ.get('RAFT_NAMES', '').split()
-
-if extra.strip():
-    i = s.index('\nvolumes:')
-    s = s[:i] + '\n' + extra.rstrip('\n') + '\n' + s[i:]
-
-if names:
-    m = re.search(r'^volumes:\n', s, re.M)
-    add = ''.join('  %s:\n' % n for n in names)
-    s = s[:m.end()] + add + s[m.end():]
-
-open(path, 'w').write(s)
-PYEOF
-    if [ $? -eq 0 ]; then
-        ok "docker-compose.yml — $([ "$MODE" = solo ] && echo "سرویس‌های اضافی برداشته شدند" || echo "$((NODES-1)) سرویس orderer اضافه شد")"
-    else
-        bad "ویرایش docker-compose.yml ناموفق"; exit 1
-    fi
+    PROFILE=$([ "$NODES" -gt 3 ] && echo raft5 || echo raft)
+    ok "docker-compose از قبل $NODES اوردرر را با profile دارد"
+    echo "     هنگام بالا آوردن: docker compose --profile $PROFILE up -d"
 fi
 
 # ══ خلاصه ════════════════════════════════════════════════════════════
