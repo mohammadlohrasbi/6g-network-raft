@@ -99,6 +99,23 @@ if [ -f "$SCRIPTS/fix-paths.sh" ]; then
     fi
 fi
 
+# ── CA ──
+# گواهی TLS نودها از CA میانی صادر می‌شود. اگر بالا نباشد، network.sh به
+# fallback خودامضا می‌افتد — که برای Raft کشنده است، چون نودها با pinning
+# همدیگر را می‌شناسند و ریشه‌های جدا یکدیگر را تأیید نمی‌کنند.
+if [ "$DRY_RUN" != "1" ] && [ "$NODES" -gt 1 ]; then
+    if ! docker ps --format '{{.Names}}' | grep -q '^rca-main$'; then
+        step "پیش‌نیاز: راه‌اندازی CA"
+        (cd "$CONFIG" && docker compose -f docker-compose-root-ca.yml up -d) >/dev/null 2>&1
+        sleep 8
+        if docker ps --format '{{.Names}}' | grep -q '^rca-main$'; then
+            ok "CA بالا آمد"
+        else
+            warn "rca-main بالا نیامد — network.sh خودش تلاش می‌کند"
+        fi
+    fi
+fi
+
 # ── ۱) شبکه پایه ──
 step "۱/۷  مواد رمزنگاری و شبکه پایه"
 if [ "$SKIP_NETWORK" = "1" ]; then
