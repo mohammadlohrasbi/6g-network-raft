@@ -205,6 +205,21 @@ DRY_RUN=1 ./fix-paths.sh      # اول ببینید کدام فایل‌ها
 
 ### A1 — مواد رمزنگاری و شبکهٔ پایه
 
+**پیش از این گام، CA باید بالا باشد:**
+
+```bash
+cd /root/6g-network-raft/config
+docker compose -f docker-compose-root-ca.yml up -d
+sleep 10
+docker ps --format '{{.Names}}' | grep -E "rca-main|root-ca"
+```
+
+**هر دو باید دیده شوند.** اگر `rca-main` نبود، `network.sh` گواهی نودها را
+خودامضا می‌سازد — که برای Raft کشنده است: نودها با TLS pinning یکدیگر را
+می‌شناسند و ریشه‌های جدا همدیگر را تأیید نمی‌کنند.
+
+`bootstrap-secure.sh` این را خودکار انجام می‌دهد.
+
 ```bash
 cd /root/6g-network-raft/scripts
 NETWORK_TLS=true ORDERER_NODES=3 ./network.sh
@@ -229,6 +244,18 @@ ls config/crypto-config/ordererOrganizations/example.com/orderers/
 ```
 
 اولی: `server.crt`، `server.key`، `ca.crt`، `client.crt`، `client.key`.
+
+**و مهم‌تر از وجود گواهی، صادرکنندهٔ آن:**
+
+```bash
+cd config/crypto-config/ordererOrganizations/example.com/orderers
+for n in orderer orderer2 orderer3; do
+  openssl x509 -in $n.example.com/tls/server.crt -noout -issuer
+done
+```
+
+هر سه باید `issuer=CN = rca-main.example.com` بدهند. اگر کدام‌یک
+`issuer` خودش بود، خودامضا است و خوشهٔ Raft کار نخواهد کرد.
 
 دومی باید **به تعداد `ORDERER_NODES`** پوشه نشان دهد. اگر فقط
 `orderer.example.com` را دید، متغیر منتقل نشده و خوشهٔ Raft بعداً دو نود
@@ -602,6 +629,8 @@ ls scripts/set-tls.sh scripts/setup-raft.sh       # هر دو
 | رهبر انتخاب نمی‌شود | profile با configtx نمی‌خواند | `--profile raft` با `setup-raft.sh 3` |
 | `refers to undefined network` | نسخهٔ قدیمی `setup-raft.sh` سرویس تزریق می‌کرد | نسخهٔ جدید — profile را به کار می‌برد |
 | `no TLS certificate` | گواهی خوشه نیست | `NETWORK_TLS=true ORDERER_NODES=3 ./network.sh` |
+| `tls: bad certificate` بین اوردررها | گواهی‌ها ریشهٔ مشترک ندارند | بررسی `issuer` هر سه — همه باید `rca-main` باشند |
+| رهبر انتخاب نمی‌شود با وجود ۳ نود بالا | همان بالا | CA را بالا بیاورید و گواهی‌ها را بازسازی کنید |
 | اوردررها همدیگر را نمی‌بینند | پورت ۷۰۵۳ | `docker logs` هر نود |
 | `cacerts` پیدا نشد هنگام `configtxgen` | `crypto-config` ناقص است | `network.sh` را کامل اجرا کنید |
 
