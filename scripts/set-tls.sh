@@ -82,6 +82,61 @@ for f in deploy_functions.sh deploy-staged.sh seed-network.sh upgrade-spatial.sh
     ok "$f"
 done
 
+# ── ۲ب) گواهی به‌ازای هر peer ──
+#
+# با TLS روشن، هر --peerAddresses باید یک --tlsRootCertFiles همراه داشته
+# باشد وگرنه:
+#
+#     number of peer addresses (8) does not match
+#     the number of TLS root cert files (1)
+#
+# اسکریپت‌ها PEER_ARGS را در حلقه می‌سازند، پس همان‌جا جفتش را اضافه
+# می‌کنیم. هر peer گواهی ریشه خودش را دارد، ولی همه از یک CA آمده‌اند و
+# فابریک فقط ریشه را تأیید می‌کند — پس گواهی peer محلی برای همه کار
+# می‌کند و نیازی به mount هشت پوشه نیست.
+PEER_LINE='PEER_ARGS="$PEER_ARGS --peerAddresses peer0.org${i}.example.com:${ORG_PORTS[$i]}"'
+PEER_LINE_TLS='PEER_ARGS="$PEER_ARGS --peerAddresses peer0.org${i}.example.com:${ORG_PORTS[$i]} --tlsRootCertFiles '"$C_TLS_PEER"'/ca.crt"'
+
+for f in seed-network.sh upgrade-spatial.sh network.sh deploy_functions.sh deploy-staged.sh; do
+    p="$SCRIPTS/$f"
+    [ -f "$p" ] || continue
+    # اول هر جفت قبلی را بردار تا اجرای دوباره تکرارش نکند
+    sed -i "s| --tlsRootCertFiles [^\"]*||g" "$p"
+    if [ "$MODE" = "on" ]; then
+        python3 - "$p" "$C_TLS_PEER" <<'PYEOF'
+import sys, re
+path, tls = sys.argv[1], sys.argv[2]
+s = open(path).read()
+# هر خطی که --peerAddresses را به PEER_ARGS اضافه می‌کند
+pat = re.compile(r'(--peerAddresses peer0\.org\$\{i\}\.example\.com:\$\{ORG_PORTS\[\$i\]\})')
+s2 = pat.sub(r'\1 --tlsRootCertFiles ' + tls + '/ca.crt', s)
+if s2 != s:
+    open(path, 'w').write(s2)
+PYEOF
+    fi
+done
+ok "گواهی به‌ازای هر peer در دستورهای چندنقطه‌ای"
+
+# ── ۲ج) مهلت انتظار رویداد ──
+#
+# با Raft هر تراکنش پیش از کامیت باید در اکثریت نودها تکرار شود، و با TLS
+# هر اتصال یک دست‌تکانی رمزنگاری اضافه دارد. مهلت پیش‌فرض ۳۰ ثانیه برای
+# approve هشت سازمان کافی نیست و به این شکل ظاهر می‌شود:
+#
+#     DeadlineExceeded ... stream terminated by RST_STREAM
+#
+# افزودن --waitForEventTimeout مشکل را حل می‌کند بی‌آنکه رفتار دیگری
+# عوض شود.
+for f in deploy_functions.sh deploy-staged.sh upgrade-spatial.sh; do
+    p="$SCRIPTS/$f"
+    [ -f "$p" ] || continue
+    sed -i "s| --waitForEventTimeout [0-9]*[a-z]*||g" "$p"
+    if [ "$MODE" = "on" ]; then
+        sed -i "s|--waitForEvent\b|--waitForEvent --waitForEventTimeout 300s|g" "$p"
+    fi
+done
+ok "مهلت انتظار رویداد"
+
 # ── ۳) سرویس داشبورد ──
 # config.js مقدار tlsEnabled را از این متغیر می‌خواند، و bench-runner و
 # gen-caliper-network هر دو از config.js تبعیت می‌کنند.
