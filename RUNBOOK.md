@@ -600,6 +600,7 @@ ls scripts/set-tls.sh scripts/setup-raft.sh       # هر دو
 | نشانه | علت | اصلاح |
 |---|---|---|
 | رهبر انتخاب نمی‌شود | profile با configtx نمی‌خواند | `--profile raft` با `setup-raft.sh 3` |
+| `refers to undefined network` | نسخهٔ قدیمی `setup-raft.sh` سرویس تزریق می‌کرد | نسخهٔ جدید — profile را به کار می‌برد |
 | `no TLS certificate` | گواهی خوشه نیست | `NETWORK_TLS=true ORDERER_NODES=3 ./network.sh` |
 | اوردررها همدیگر را نمی‌بینند | پورت ۷۰۵۳ | `docker logs` هر نود |
 | `cacerts` پیدا نشد هنگام `configtxgen` | `crypto-config` ناقص است | `network.sh` را کامل اجرا کنید |
