@@ -784,13 +784,63 @@ EOF
   # chaincode.json شامل chaincode_id و peer_address است؛ بدون jq با sed پارس می‌کنیم.
   cat > "$builder_dir/run" << 'EOF'
 #!/bin/bash
+# run — اجرای chaincode ساخته‌شده توسط builder خارجی.
+#
+# دو نکته که این اسکریپت را شکل می‌دهند:
+#
+# ۱) اینجا داخل کانتینر peer اجرا می‌شود، نه روی هاست. تصویر fabric-peer
+#    نه python3 دارد نه jq — استفاده از آنها «exit status 127» می‌دهد که
+#    peer آن را «builder 'prebuilt' run failed» گزارش می‌کند. پس فقط sed.
+#
+# ۲) نسخه اول «export CORE_PEER_TLS_ENABLED=false» را ثابت داشت. با TLS
+#    روشن، سرویس chaincode روی peer (پورت ۷۰۵۲) فقط اتصال TLS می‌پذیرد:
+#      peer: tls: first record does not look like a TLS handshake
+#            server=ChaincodeServer
+#      سپس: chaincode registration failed: container exited with 0
+#    chaincode رد می‌شود، ثبت‌نام نمی‌کند و تمیز خارج می‌شود — پس هیچ خطای
+#    صریحی از خودش دیده نمی‌شود.
+#
+# فابریک مواد TLS را در همان chaincode.json می‌گذارد.
 set -e
-BUILD_DIR=$1
-METADIR=$2
+
+BUILD_DIR="$1"
+METADIR="$2"
 CC_JSON="$METADIR/chaincode.json"
-export CORE_CHAINCODE_ID_NAME="$(sed -n 's/.*"chaincode_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$CC_JSON")"
-PEER_ADDRESS="$(sed -n 's/.*"peer_address"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$CC_JSON")"
-export CORE_PEER_TLS_ENABLED=false
+
+# یک فیلد رشته‌ای از JSON. \n های داخل مقدار به خط واقعی تبدیل می‌شوند —
+# گواهی‌های PEM این‌طور کدگذاری شده‌اند و بدون این تبدیل نامعتبرند.
+_field() {
+    sed -n "s/.*\"$1\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" "$CC_JSON" \
+        | sed 's/\\n/\n/g'
+}
+
+export CORE_CHAINCODE_ID_NAME="$(_field chaincode_id)"
+PEER_ADDRESS="$(_field peer_address)"
+
+CLIENT_CERT="$(_field client_cert)"
+CLIENT_KEY="$(_field client_key)"
+ROOT_CERT="$(_field root_cert)"
+
+if [ -n "$CLIENT_CERT" ] && [ -n "$CLIENT_KEY" ]; then
+    printf '%s\n' "$CLIENT_CERT" > "$METADIR/client.crt"
+    printf '%s\n' "$CLIENT_KEY"  > "$METADIR/client.key"
+    chmod 600 "$METADIR/client.key"
+
+    export CORE_PEER_TLS_ENABLED=true
+    # shim دو صورت را می‌شناسد و تفاوتشان مهم است:
+    #   *_PATH → فایل حاوی PEM کدشده با base64
+    #   *_FILE → فایل حاوی PEM خام
+    export CORE_TLS_CLIENT_CERT_FILE="$METADIR/client.crt"
+    export CORE_TLS_CLIENT_KEY_FILE="$METADIR/client.key"
+
+    if [ -n "$ROOT_CERT" ]; then
+        printf '%s\n' "$ROOT_CERT" > "$METADIR/root.crt"
+        export CORE_PEER_TLS_ROOTCERT_FILE="$METADIR/root.crt"
+    fi
+else
+    export CORE_PEER_TLS_ENABLED=false
+fi
+
 # نکته: shim آدرس peer را از فلگ -peer.address می‌خواند، نه از env
 exec "$BUILD_DIR/bin/chaincode" -peer.address="$PEER_ADDRESS"
 EOF
