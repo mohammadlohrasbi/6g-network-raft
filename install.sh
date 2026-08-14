@@ -98,11 +98,18 @@ for d in scripts server public config; do
   # الگوی * فایل‌های نقطه‌دار را نمی‌گیرد، و config/.env دقیقاً یکی از
   # آنهاست — بدون آن docker-compose پارامترهای TLS را نمی‌بیند و شبکه
   # بی‌صدا plaintext بالا می‌آید.
-  for f in "$HERE/$d"/* "$HERE/$d"/.[!.]*; do
-    [ -f "$f" ] || continue
-    copy_one "$f" "$TARGET/$d/$(basename "$f")"
+  # find به‌جای گلاب، تا زیرپوشه‌ها هم بیایند.
+  #
+  # نسخه قبلی «[ -f ] || continue» داشت که پوشه‌ها را رد می‌کرد — یعنی
+  # scripts/builders/golang/bin/run هرگز کپی نمی‌شد. آن فایل بیلدر خارجی
+  # است و بدون نسخه TLS-آگاهش، chaincode با «container exited with 0»
+  # شکست می‌خورد. فایل در بسته بود ولی به سرور نمی‌رسید.
+  while IFS= read -r f; do
+    rel="${f#$HERE/$d/}"
+    mkdir -p "$TARGET/$d/$(dirname "$rel")"
+    copy_one "$f" "$TARGET/$d/$rel"
     n=$((n+1))
-  done
+  done < <(find "$HERE/$d" -type f 2>/dev/null)
   ok "$d/ — $n فایل"
 done
 
