@@ -1,0 +1,69 @@
+#!/bin/bash
+# run — اجرای chaincode ساخته‌شده توسط builder خارجی.
+#
+# نسخه قبلی «export CORE_PEER_TLS_ENABLED=false» را ثابت داشت. تا وقتی
+# شبکه plaintext بود کار می‌کرد، ولی با TLS روشن، سرویس chaincode روی peer
+# (پورت ۷۰۵۲) فقط اتصال TLS می‌پذیرد. نتیجه:
+#
+#   peer:      tls: first record does not look like a TLS handshake
+#              server=ChaincodeServer
+#   و سپس:     chaincode registration failed: container exited with 0
+#
+# chaincode plaintext وصل می‌شود، رد می‌شود، ثبت‌نام نمی‌کند و تمیز خارج
+# می‌شود — پس هیچ خطای صریحی در خود chaincode دیده نمی‌شود.
+#
+# فابریک مواد TLS را در همان chaincode.json می‌گذارد (client_cert،
+# client_key، root_cert به‌صورت PEM). اینجا آنها را روی دیسک می‌نویسیم و
+# مسیرشان را به shim می‌دهیم. اگر آن فیلدها نباشند یعنی شبکه TLS ندارد و
+# رفتار قبلی حفظ می‌شود.
+set -e
+
+BUILD_DIR="$1"
+METADIR="$2"
+CC_JSON="$METADIR/chaincode.json"
+
+# خواندن یک فیلد از JSON. jq اگر باشد، وگرنه python3 — هر دو در پیش‌نیازها
+# هستند و این اسکریپت نباید به یکی از آنها گره بخورد.
+_field() {
+    if command -v jq >/dev/null 2>&1; then
+        jq -r --arg k "$1" '.[$k] // empty' "$CC_JSON"
+    else
+        python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get(sys.argv[2],""))' \
+            "$CC_JSON" "$1"
+    fi
+}
+
+export CORE_CHAINCODE_ID_NAME="$(_field chaincode_id)"
+PEER_ADDRESS="$(_field peer_address)"
+
+CLIENT_CERT="$(_field client_cert)"
+CLIENT_KEY="$(_field client_key)"
+ROOT_CERT="$(_field root_cert)"
+
+if [ -n "$CLIENT_CERT" ] && [ -n "$CLIENT_KEY" ]; then
+    # مواد TLS کنار فایل متادیتا نوشته می‌شوند — همان‌جا که فابریک برای هر
+    # اجرا پوشه موقت می‌سازد و خودش پاکش می‌کند.
+    printf '%s' "$CLIENT_CERT" > "$METADIR/client.crt"
+    printf '%s' "$CLIENT_KEY"  > "$METADIR/client.key"
+    chmod 600 "$METADIR/client.key"
+
+    export CORE_PEER_TLS_ENABLED=true
+    # shim دو صورت را می‌شناسد و تفاوتشان مهم است:
+    #   *_PATH  → فایل حاوی PEM کدشده با base64
+    #   *_FILE  → فایل حاوی PEM خام
+    # آنچه از chaincode.json می‌آید PEM خام است، پس صورت _FILE. دادن آن به
+    # _PATH باعث می‌شود shim محتوا را base64-decode کند و کلید نامعتبر
+    # بشود — که همان شکست ثبت‌نام را می‌دهد، فقط با علتی دیگر.
+    export CORE_TLS_CLIENT_CERT_FILE="$METADIR/client.crt"
+    export CORE_TLS_CLIENT_KEY_FILE="$METADIR/client.key"
+
+    if [ -n "$ROOT_CERT" ]; then
+        printf '%s' "$ROOT_CERT" > "$METADIR/root.crt"
+        export CORE_PEER_TLS_ROOTCERT_FILE="$METADIR/root.crt"
+    fi
+else
+    export CORE_PEER_TLS_ENABLED=false
+fi
+
+# shim آدرس peer را از فلگ -peer.address می‌خواند، نه از env
+exec "$BUILD_DIR/bin/chaincode" -peer.address="$PEER_ADDRESS"
