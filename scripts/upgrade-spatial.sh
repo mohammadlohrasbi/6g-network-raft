@@ -113,7 +113,12 @@ peer_exec() {
 MISSING=()
 for pair in "${PAIRS[@]}"; do
     CC="${pair##*:}"
-    if ! grep -q "func (s \*${CC}) SeedNetwork(" "${CHAINCODE_DIR}/${CC}/chaincode.go" 2>/dev/null; then
+    # SeedNetwork در shared.go زندگی می‌کند نه chaincode.go، و گیرنده‌اش
+    # NetworkBase است نه نام قرارداد — از وقتی هر قرارداد به دو فایل تقسیم
+    # شد. جست‌وجو در هر دو فایل و با هر دو الگو، تا این بررسی هم با ساختار
+    # قدیمی کار کند هم با جدید.
+    if ! grep -qE "func \(s \*(${CC}|NetworkBase)\) SeedNetwork\(" \
+         "${CHAINCODE_DIR}/${CC}/chaincode.go" "${CHAINCODE_DIR}/${CC}/shared.go" 2>/dev/null; then
         MISSING+=("$CC")
     fi
 done
