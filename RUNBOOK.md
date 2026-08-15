@@ -440,10 +440,11 @@ systemctl restart dashboard
 
 cd scripts
 ./install-test-tools.sh
-./patch-tls-detect.sh          # ← هر دو پیش از خطوط بعد
+./patch-tls-detect.sh          # ← این سه پیش از خطوط بعد
 ./patch-tls-paths.sh
 node gen-caliper-network.js    # با TLS به grpcs:// می‌رود
 ./fix-tape-policy.sh
+./fix-tape-tls.sh              # گواهی در کانفیگ‌های Tape
 ./add-test-endpoint.sh         # همه باید ✓ باشند
 ```
 
@@ -732,6 +733,7 @@ ls scripts/set-tls.sh scripts/setup-raft.sh       # هر دو
 | CLI بی‌پاسخ | فلگ TLS ندارد | `./set-tls.sh on` دوباره |
 | Caliper ۰ موفق از N، بدون خطای گواهی | پروفایل با `grpc://` و بدون `tlsCACerts` ساخته شده | `./patch-tls-detect.sh` سپس `node gen-caliper-network.js` |
 | Tape: `fail to load TLS CA Cert ... tlsca.example.com-cert.pem` | `config.js` نام‌گذاری cryptogen دارد ولی شبکه با fabric-ca ساخته شده | `./patch-tls-paths.sh` سپس `./fix-tape-policy.sh` |
+| کانفیگ‌های Tape `tls_ca_cert: ""` دارند | `install-test-tools.sh` آنها را برای شبکهٔ plaintext ساخته | `./fix-tape-tls.sh` — بدون نصب دوبارهٔ ابزارها |
 | اسکریپت دستی پیکربندی بدون TLS می‌سازد ولی سرویس درست کار می‌کند | `CORE_PEER_TLS_ENABLED` فقط در محیط سرویس ست است | `./patch-tls-detect.sh` — `config.js` را وادار می‌کند `.env` را بخواند |
 
 ### داشبورد
