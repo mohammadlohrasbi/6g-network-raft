@@ -261,6 +261,12 @@ fi
 # ── ابزارها و سرویس ──
 step "ابزارهای تست و داشبورد"
 if [ "$DRY_RUN" != "1" ]; then
+    # پیش از تولید پروفایل‌ها: config.js باید وضعیت TLS را از .env بخواند.
+    # این اسکریپت‌ها اینجا بدون متغیر محیطی سرویس اجرا می‌شوند، پس بدون این
+    # وصله پیکربندی بدون TLS می‌سازند — و هر تراکنش بنچمارک رد می‌شود
+    # بی‌آنکه خطای گواهی دیده شود.
+    [ -f ./patch-tls-detect.sh ] && ./patch-tls-detect.sh >/dev/null 2>&1 \
+        && ok "تشخیص TLS از .env"
     node gen-caliper-network.js >/dev/null 2>&1 && ok "پروفایل‌های Caliper (grpcs://)"
     ./fix-tape-policy.sh >/dev/null 2>&1 && ok "سیاست Tape"
     node update-fn-map.js >/dev/null 2>&1 && ok "نگاشت توابع"
