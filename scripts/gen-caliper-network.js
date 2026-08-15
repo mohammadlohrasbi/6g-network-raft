@@ -48,7 +48,33 @@ const WORKSPACE = wsFlag !== -1 && argv[wsFlag + 1]
 const NETWORKS_DIR = path.join(WORKSPACE, 'networks');
 fs.mkdirSync(NETWORKS_DIR, { recursive: true });
 
-const scheme = config.tlsEnabled ? 'grpcs' : 'grpc';
+/* وضعیت TLS از config/.env خوانده می‌شود، نه از config.tlsEnabled.
+ *
+ * config.js مقدارش را از CORE_PEER_TLS_ENABLED می‌گیرد، و آن متغیر فقط در
+ * محیط سرویس داشبورد ست است. وقتی این اسکریپت را دستی از خط فرمان اجرا
+ * کنید نیست — و پروفایل با grpc:// و بدون tlsCACerts ساخته می‌شود، در
+ * حالی که شبکه TLS دارد. نتیجه: هر تراکنش Caliper رد می‌شود بی‌آنکه
+ * خطای گواهی دیده شود، فقط «۰ موفق از ۵۰۰».
+ *
+ * .env همان منبعی است که docker-compose هم از آن می‌خواند، پس همان‌جا
+ * پرسیده می‌شود. متغیر محیطی همچنان بازنویسی می‌کند. */
+function tlsEnabledFromEnvFile() {
+  if (process.env.CORE_PEER_TLS_ENABLED !== undefined) {
+    return process.env.CORE_PEER_TLS_ENABLED === 'true';
+  }
+  try {
+    const envPath = path.join(repoRoot, 'config', '.env');
+    const m = fs.readFileSync(envPath, 'utf8')
+      .match(/^NETWORK_TLS\s*=\s*(\S+)/m);
+    if (m) return m[1].trim() === 'true';
+  } catch (_) {
+    /* .env نیست — به config برمی‌گردیم */
+  }
+  return !!config.tlsEnabled;
+}
+
+const tlsOn = tlsEnabledFromEnvFile();
+const scheme = tlsOn ? 'grpcs' : 'grpc';
 const channels = Object.keys(catalog.CHANNEL_CHAINCODE_MAP);
 const ORGS = [1, 2, 3, 4, 5, 6, 7, 8];
 
@@ -114,7 +140,7 @@ function connectionProfile(n) {
 
   const peer = { url: `${scheme}://${org.peerEndpoint}` };
   const orderer = { url: `${scheme}://${config.orderer.endpoint}` };
-  if (config.tlsEnabled) {
+  if (tlsOn) {
     peer.tlsCACerts = { path: org.tlsRootCert };
     peer.grpcOptions = { 'ssl-target-name-override': peerName };
     orderer.tlsCACerts = { path: config.orderer.tlsCaCert };
@@ -220,7 +246,7 @@ console.log(`Caliper network configuration written to ${NETWORKS_DIR}`);
 console.log(`  connection profiles: ${identities.size} (absolute paths)`);
 console.log(`  channels declared:   ${channels.length}`);
 console.log(`  contracts declared:  ${contractCount}`);
-console.log(`  TLS:                 ${config.tlsEnabled ? 'on' : 'off'} (${scheme})`);
+console.log(`  TLS:                 ${tlsOn ? 'on' : 'off'} (${scheme})`);
 
 if (missing.length) {
   console.warn('\nOrganizations skipped:');
