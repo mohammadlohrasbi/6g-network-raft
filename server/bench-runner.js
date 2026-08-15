@@ -16,6 +16,47 @@ const path = require('path');
 const { spawn, execFileSync } = require('child_process');
 const yaml = require('js-yaml');
 
+/* ── مسیر گواهی TLS: از دیسک، نه از فرض ─────────────────────────────
+   config.js مسیرها را با نام‌گذاری cryptogen می‌سازد
+   (.../orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem)
+   ولی network.sh از fabric-ca استفاده می‌کند و ساختار دیگری می‌دهد
+   (.../ordererOrganizations/example.com/msp/tlscacerts/ca-cert.pem).
+
+   تا وقتی TLS خاموش بود این مسیر خوانده نمی‌شد. با TLS روشن، Tape سر آن
+   می‌ایستد:  fail to load TLS CA Cert ...: no such file or directory
+
+   پس اگر مسیری که config می‌دهد روی دیسک نبود، همان‌جا دنبال گواهی واقعی
+   می‌گردیم به‌جای اینکه کانفیگی بسازیم که قطعاً شکست می‌خورد. */
+function resolveTlsCert(given, orgDir) {
+  if (given && fs.existsSync(given)) return given;
+  try {
+    const base = path.join(orgDir, 'msp', 'tlscacerts');
+    const hit = fs.readdirSync(base).find((f) => f.endsWith('.pem') || f.endsWith('.crt'));
+    if (hit) return path.join(base, hit);
+  } catch (_) { /* پوشه نیست */ }
+  return given || '';
+}
+
+/* ریشه crypto-config، برای یافتن پوشه هر سازمان. */
+function cryptoBase() {
+  return process.env.CRYPTO_BASE
+    || path.join(__dirname, '..', 'config', 'crypto-config');
+}
+
+function orgTlsCert(o) {
+  return resolveTlsCert(
+    o.tlsRootCert,
+    path.join(cryptoBase(), 'peerOrganizations', `${o.name || o.org || 'org1'}.example.com`)
+  );
+}
+
+function ordererTlsCert() {
+  return resolveTlsCert(
+    config.orderer && config.orderer.tlsCaCert,
+    path.join(cryptoBase(), 'ordererOrganizations', 'example.com')
+  );
+}
+
 const config = require('./config');
 const {
   buildArgs,
@@ -162,7 +203,7 @@ function buildTapeConfig({ target, orgNums, policyPath, connections, clientsPerC
     if (!o) throw new Error(`Org ${n} is not in the server config`);
     return {
       addr: o.peerEndpoint,
-      tls_ca_cert: config.tlsEnabled ? o.tlsRootCert : '',
+      tls_ca_cert: config.tlsEnabled ? orgTlsCert(o) : '',
       org: `org${n}`,
     };
   });
@@ -174,14 +215,14 @@ function buildTapeConfig({ target, orgNums, policyPath, connections, clientsPerC
     committers: [
       {
         addr: signer.peerEndpoint,
-        tls_ca_cert: config.tlsEnabled ? signer.tlsRootCert : '',
+        tls_ca_cert: config.tlsEnabled ? orgTlsCert(signer) : '',
         org: `org${orgNums[0]}`,
       },
     ],
     commitThreshold: 1,
     orderer: {
       addr: config.orderer.endpoint,
-      tls_ca_cert: config.tlsEnabled ? config.orderer.tlsCaCert : '',
+      tls_ca_cert: config.tlsEnabled ? ordererTlsCert() : '',
       org: `org${orgNums[0]}`,
     },
     policyFile: policyPath,
