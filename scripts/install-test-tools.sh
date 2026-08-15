@@ -652,6 +652,22 @@ cat > "${TAPE_CONFIG}" << 'EOF'
 # Tape Configuration for 8-Organization Fabric Network
 # TLS is DISABLED (grpc://)
 
+# ── گواهی TLS برای Tape ──
+# تا وقتی شبکه plaintext بود، tls_ca_cert خالی درست بود. با TLS روشن، Tape
+# بدون آن اصلاً وصل نمی‌شود. مسیرها از روی دیسک خوانده می‌شوند چون
+# fabric-ca و cryptogen ساختار متفاوتی می‌سازند.
+_CRYPTO="${CRYPTO_BASE:-$ROOT_DIR/config/crypto-config}"
+_tape_tls() {   # $1 = org (خالی یعنی اوردرر)
+    [ "$(grep -oE '^NETWORK_TLS[[:space:]]*=[[:space:]]*\S+' \
+        "$ROOT_DIR/config/.env" 2>/dev/null | tr -d ' ' | cut -d= -f2)" = "true" ] || return 0
+    if [ -n "$1" ]; then
+        find "$_CRYPTO/peerOrganizations/$1.example.com" -path "*msp/tlscacerts/*.pem" 2>/dev/null | head -1
+    else
+        find "$_CRYPTO/ordererOrganizations" -path "*msp/tlscacerts/*.pem" 2>/dev/null | head -1
+    fi
+}
+_ORD_TLS="$(_tape_tls)"
+
 endorsers:
 EOF
 
@@ -660,7 +676,7 @@ for i in "${!ORGS[@]}"; do
     PORT="${PEER_PORTS[$i]}"
     cat >> "${TAPE_CONFIG}" << EOF
   - addr: peer0.${ORG}.example.com:${PORT}
-    tls_ca_cert: ""
+    tls_ca_cert: "$(_tape_tls "$ORG")"
     org: ${ORG}
 EOF
 done
@@ -669,13 +685,13 @@ cat >> "${TAPE_CONFIG}" << EOF
 
 committers:
   - addr: peer0.org1.example.com:7051
-    tls_ca_cert: ""
+    tls_ca_cert: "$(_tape_tls org1)"
     org: org1
 commitThreshold: 1
 
 orderer:
   addr: orderer.example.com:${ORDERER_PORT}
-  tls_ca_cert: ""
+  tls_ca_cert: "${_ORD_TLS}"
   org: org1
 
 policyFile: ${TAPE_POLICY_FILE}
@@ -713,7 +729,7 @@ CHANNEL_EOF
         PORT="${PEER_PORTS[$i]}"
         cat >> "${CHANNEL_TAPE_CONFIG}" << EOF
   - addr: peer0.${ORG}.example.com:${PORT}
-    tls_ca_cert: ""
+    tls_ca_cert: "$(_tape_tls "$ORG")"
     org: ${ORG}
 EOF
     done
@@ -722,13 +738,13 @@ EOF
 
 committers:
   - addr: peer0.org1.example.com:7051
-    tls_ca_cert: ""
+    tls_ca_cert: "$(_tape_tls org1)"
     org: org1
 commitThreshold: 1
 
 orderer:
   addr: orderer.example.com:${ORDERER_PORT}
-  tls_ca_cert: ""
+  tls_ca_cert: "${_ORD_TLS}"
   org: org1
 
 policyFile: ${TAPE_POLICY_FILE}
