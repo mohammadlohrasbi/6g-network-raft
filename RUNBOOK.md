@@ -440,7 +440,8 @@ systemctl restart dashboard
 
 cd scripts
 ./install-test-tools.sh
-./patch-tls-detect.sh          # ← پیش از دو خط بعد
+./patch-tls-detect.sh          # ← هر دو پیش از خطوط بعد
+./patch-tls-paths.sh
 node gen-caliper-network.js    # با TLS به grpcs:// می‌رود
 ./fix-tape-policy.sh
 ./add-test-endpoint.sh         # همه باید ✓ باشند
@@ -472,7 +473,14 @@ grep tls_ca_cert ../test-tools/tape-configs/config-datachannel.yaml
 config/crypto-config/ordererOrganizations/example.com/msp/tlscacerts/ca-cert.pem
 ```
 
-`bootstrap-secure.sh` این وصله را خودکار اعمال می‌کند.
+**`patch-tls-paths.sh` مسئلهٔ دوم را حل می‌کند:** `config.js` مسیر گواهی را
+با نام‌گذاری `cryptogen` می‌سازد
+(`.../orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem`)
+ولی `network.sh` از `fabric-ca` استفاده می‌کند و ساختار دیگری می‌سازد
+(`.../ordererOrganizations/example.com/msp/tlscacerts/ca-cert.pem`). تا وقتی
+TLS خاموش بود این مسیر خوانده نمی‌شد؛ حالا Tape سر آن می‌ایستد.
+
+`bootstrap-secure.sh` هر دو وصله را خودکار اعمال می‌کند.
 
 ### A10 — امنیت داشبورد
 
@@ -494,6 +502,7 @@ bash generateChaincodes_spatial.sh     # تا build OK
 ./upgrade-spatial.sh datachannel       # sequence را از شبکه می‌خواند
 ./seed-network.sh datachannel
 ./patch-tls-detect.sh
+./patch-tls-paths.sh
 node gen-caliper-assets.js --force
 node update-fn-map.js
 bash ../server/patch-index.sh
@@ -722,7 +731,7 @@ ls scripts/set-tls.sh scripts/setup-raft.sh       # هر دو
 | `DeadlineExceeded ... RST_STREAM` هنگام approve | مهلت ۳۰ ثانیه با Raft و TLS کم است | `./set-tls.sh on` مهلت را ۳۰۰ ثانیه می‌کند |
 | CLI بی‌پاسخ | فلگ TLS ندارد | `./set-tls.sh on` دوباره |
 | Caliper ۰ موفق از N، بدون خطای گواهی | پروفایل با `grpc://` و بدون `tlsCACerts` ساخته شده | `./patch-tls-detect.sh` سپس `node gen-caliper-network.js` |
-| Tape: `fail to load TLS CA Cert ... no such file` | مسیر گواهی از پیکربندی بدون TLS آمده | همان — سپس `./fix-tape-policy.sh` |
+| Tape: `fail to load TLS CA Cert ... tlsca.example.com-cert.pem` | `config.js` نام‌گذاری cryptogen دارد ولی شبکه با fabric-ca ساخته شده | `./patch-tls-paths.sh` سپس `./fix-tape-policy.sh` |
 | اسکریپت دستی پیکربندی بدون TLS می‌سازد ولی سرویس درست کار می‌کند | `CORE_PEER_TLS_ENABLED` فقط در محیط سرویس ست است | `./patch-tls-detect.sh` — `config.js` را وادار می‌کند `.env` را بخواند |
 
 ### داشبورد
