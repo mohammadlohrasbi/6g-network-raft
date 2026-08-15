@@ -440,10 +440,39 @@ systemctl restart dashboard
 
 cd scripts
 ./install-test-tools.sh
+./patch-tls-detect.sh          # ← پیش از دو خط بعد
 node gen-caliper-network.js    # با TLS به grpcs:// می‌رود
 ./fix-tape-policy.sh
 ./add-test-endpoint.sh         # همه باید ✓ باشند
 ```
+
+**`patch-tls-detect.sh` باید پیش از دو اسکریپت بعدی بیاید.** `config.js`
+وضعیت TLS را از `CORE_PEER_TLS_ENABLED` می‌خواند، و آن متغیر فقط در محیط
+سرویس داشبورد ست است. وقتی این اسکریپت‌ها را دستی می‌زنید ست نیست، پس
+پیکربندی **بدون TLS** ساخته می‌شود:
+
+- پروفایل Caliper با `grpc://` و بدون `tlsCACerts`
+- کانفیگ Tape با `tls_ca_cert` خالی
+
+شبکه TLS دارد، پس هر تراکنش رد می‌شود — **بدون هیچ خطای گواهی، فقط
+«۰ موفق از ۵۰۰»**. این وصله `config.js` را وادار می‌کند `config/.env` را
+بخواند، همان منبعی که `docker-compose` هم از آن می‌خواند.
+
+بررسی:
+
+```bash
+grep -c grpcs ../test-tools/caliper-workspace/networks/connection-profile-org1.json
+grep tls_ca_cert ../test-tools/tape-configs/config-datachannel.yaml
+```
+
+اولی باید بیش از صفر بدهد؛ دومی مسیر یک فایل موجود. مسیر درست گواهی
+سازمان اوردرر این است:
+
+```
+config/crypto-config/ordererOrganizations/example.com/msp/tlscacerts/ca-cert.pem
+```
+
+`bootstrap-secure.sh` این وصله را خودکار اعمال می‌کند.
 
 ### A10 — امنیت داشبورد
 
@@ -464,6 +493,7 @@ cd /root/6g-network-raft/scripts
 bash generateChaincodes_spatial.sh     # تا build OK
 ./upgrade-spatial.sh datachannel       # sequence را از شبکه می‌خواند
 ./seed-network.sh datachannel
+./patch-tls-detect.sh
 node gen-caliper-assets.js --force
 node update-fn-map.js
 bash ../server/patch-index.sh
@@ -666,7 +696,13 @@ ls scripts/set-tls.sh scripts/setup-raft.sh       # هر دو
 | `refers to undefined network` | نسخهٔ قدیمی `setup-raft.sh` سرویس تزریق می‌کرد | نسخهٔ جدید — profile را به کار می‌برد |
 | `no TLS certificate` | گواهی خوشه نیست | `NETWORK_TLS=true ORDERER_NODES=3 ./network.sh` |
 | `tls: bad certificate` بین اوردررها | گواهی‌ها ریشهٔ مشترک ندارند | بررسی `issuer` هر سه — همه باید `rca-main` باشند |
-| `client didn't provide a certificate` بین اوردررها | mTLS خوشه فعال نیست | `ORDERER_GENERAL_TLS_CLIENTAUTHREQUIRED=true` — در compose جدید هست |
+| `consenter ... has invalid certificate: signed by unknown authority` | `tlscacerts` گواهی ریشه را دارد ولی امضاکننده `rca-main` است | نسخهٔ جدید `network.sh` زنجیرهٔ کامل می‌نویسد |
+| `container exited with 0` + `handshake ... server=ChaincodeServer` | بیلدر خارجی `CORE_PEER_TLS_ENABLED=false` را ثابت داشت | نسخهٔ جدید `scripts/builders/golang/bin/run` |
+| `builder 'prebuilt' run failed: exit status 127` | بیلدر داخل کانتینر peer اجرا می‌شود و آنجا `python3`/`jq` نیست | همان — نسخهٔ جدید فقط `sed` به کار می‌برد |
+| بیلدر پس از هر `bootstrap` یا `network.sh` به نسخهٔ بدون TLS برمی‌گردد | `network.sh` تابع `setup_external_builders` دارد که فایل `run` را از heredoc داخلی خودش **بازمی‌نویسد** | نسخهٔ جدید `network.sh` — heredoc اصلاح شده؛ کپی دستی فایل `run` کافی نیست |
+| بیلدر پس از `git pull` یا `install.sh` عوض نمی‌شود | نسخهٔ قدیمی `install.sh` زیرپوشه‌ها را کپی نمی‌کرد | `install.sh` جدید بازگشتی کپی می‌کند |
+| `tls: certificate required` هنگام `logSendFailure` | listener جدای خوشه گواهی کلاینت نمی‌فرستد | در compose جدید listener جدا برداشته شده؛ خوشه از TLS عمومی ارث می‌برد |
+| `client didn't provide a certificate` از هشت IP | خوشهٔ Raft روی پورت عمومی است، پس آن پورت از هر کلاینتی گواهی می‌خواهد | `CORE_PEER_TLS_CLIENTCERT_FILE` در compose و `--clientauth` در CLI — هر دو در نسخهٔ جدید |
 | `consensus type: solo` با وجود `etcdraft` در configtx | بلوک پیدایش قدیمی در volume | volumeها را پاک کنید و بلوک را از نو بسازید |
 | انتخابات بی‌پایان، هر نود ۱ رأی | رأی‌ها رد و بدل نمی‌شوند | همان mTLS خوشه |
 | `Failed to get user: sql: no rows in result set` | اوردررهای Raft در CA ثبت‌نام نشده‌اند | نسخهٔ جدید `network.sh` — هویت‌ها را در پیکربندی CA می‌سازد |
@@ -685,7 +721,9 @@ ls scripts/set-tls.sh scripts/setup-raft.sh       # هر دو
 | `number of peer addresses (8) does not match the number of TLS root cert files (1)` | با TLS هر `--peerAddresses` یک گواهی می‌خواهد | `./set-tls.sh on` نسخهٔ جدید |
 | `DeadlineExceeded ... RST_STREAM` هنگام approve | مهلت ۳۰ ثانیه با Raft و TLS کم است | `./set-tls.sh on` مهلت را ۳۰۰ ثانیه می‌کند |
 | CLI بی‌پاسخ | فلگ TLS ندارد | `./set-tls.sh on` دوباره |
-| Caliper وصل نمی‌شود | پروفایل هنوز `grpc://` | `node gen-caliper-network.js` |
+| Caliper ۰ موفق از N، بدون خطای گواهی | پروفایل با `grpc://` و بدون `tlsCACerts` ساخته شده | `./patch-tls-detect.sh` سپس `node gen-caliper-network.js` |
+| Tape: `fail to load TLS CA Cert ... no such file` | مسیر گواهی از پیکربندی بدون TLS آمده | همان — سپس `./fix-tape-policy.sh` |
+| اسکریپت دستی پیکربندی بدون TLS می‌سازد ولی سرویس درست کار می‌کند | `CORE_PEER_TLS_ENABLED` فقط در محیط سرویس ست است | `./patch-tls-detect.sh` — `config.js` را وادار می‌کند `.env` را بخواند |
 
 ### داشبورد
 
